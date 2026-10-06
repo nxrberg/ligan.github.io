@@ -1,7 +1,7 @@
 name: Deploy site
 
 # Fetches the sheet via Sheety and publishes the site to GitHub Pages.
-# Each run costs one Sheety request per team, so keep the schedule modest.
+# A fetch costs one Sheety request per team, so only scheduled and manual runs fetch.
 on:
   push:
     branches: [main]
@@ -49,9 +49,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Fetch league data
-        run: node scripts/fetch-data.mjs data/league.json
+      # Code pushes reuse the data already live on the site, so they cost no Sheety quota.
+      # Scheduled and manual runs fetch fresh data, and fall back to the live copy if Sheety fails.
+      - name: Get league data
+        run: |
+          if [ "$EVENT" != "push" ] && node scripts/fetch-data.mjs data/league.json; then exit 0; fi
+          echo "Reusing the data from the live site"
+          curl -fsSL "$LIVE_DATA" -o data/league.json
         env:
+          EVENT: ${{ github.event_name }}
+          LIVE_DATA: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/league.json
           SHEETY_BASE: ${{ secrets.SHEETY_BASE }}
           SHEETY_TOKEN: ${{ secrets.SHEETY_TOKEN }}
       - uses: actions/upload-pages-artifact@v3

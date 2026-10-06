@@ -34,7 +34,7 @@ Then open http://localhost:8000. (Opening `index.html` directly won't work becau
 
 ## Deploy
 
-`.github/workflows/pages.yml` fetches the data and publishes to GitHub Pages on every push to `main`, once a day at 10:10 Swedish time (10 minutes after the Pi updates the sheet), and on demand (Actions → Deploy site → Run workflow). Each run costs one Sheety request per team (12).
+`.github/workflows/pages.yml` publishes to GitHub Pages on every push to `main`, once a day at 10:10 Swedish time (10 minutes after the Pi updates the sheet), and on demand (Actions → Deploy site → Run workflow). Only the daily and on-demand runs fetch from Sheety (one request per team, 12 per run); a push reuses the `data/league.json` already on the live site, and so does a fetch that fails.
 
 One-time setup in the GitHub repo:
 1. Settings → Pages → Source: **GitHub Actions**.

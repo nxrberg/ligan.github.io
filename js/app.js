@@ -1,6 +1,6 @@
 import { config } from "./config.js";
 import { loadData } from "./data.js";
-import { weeksOf, weeklyBoard } from "./stats.js";
+import { ALL, weeksOf, weeklyBoard } from "./stats.js";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -8,7 +8,26 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 let data;
 let week;
 let showRank = false;
+let showHeat = readPref("heatmap", true);
 const expanded = new Set(); // categories whose `toggledBy` columns are showing
+
+// Per-viewer display preferences; storage can be unavailable, so fall back quietly.
+function readPref(key, fallback) {
+  try {
+    const v = localStorage.getItem(`ligan:${key}`);
+    return v == null ? fallback : v === "1";
+  } catch {
+    return fallback;
+  }
+}
+function writePref(key, on) {
+  try { localStorage.setItem(`ligan:${key}`, on ? "1" : "0"); } catch {}
+}
+
+const abbrs = new Map(config.teams.map((t) => [t.name, t.abbr]));
+function abbrOf(name) {
+  return abbrs.get(name) || name.replace(/[^\p{L}\p{N}#']/gu, "").slice(0, 3).toUpperCase();
+}
 
 function fmtValue(v, cat) {
   if (v == null) return "–";
@@ -29,14 +48,16 @@ function headerCell(c, cats) {
 
 function bodyCell(r, c, maxPerCat) {
   const p = r.points[c.key];
-  const heat = c.scored && p != null ? p / maxPerCat : null;
+  const heat = showHeat && c.scored && p != null ? p / maxPerCat : null;
   const style = heat == null ? "" : ` style="--heat:${Math.round(heat * 100)}%"`;
   const rk = r.ranks[c.key];
-  const text = showRank && c.scored ? (rk ? `${rk.tied ? "T" : ""}${rk.rank}` : "–") : fmtValue(r.values[c.key], c);
+  const lead = c.scored && rk?.rank === 1;
+  const text = showRank && c.scored ? (rk ? rk.rank : "–") : fmtValue(r.values[c.key], c);
   const tip = c.scored
-    ? `${fmtValue(r.values[c.key], c)} · ${rk ? `rank ${rk.tied ? "T" : ""}${rk.rank}` : "no rank"} · ${p} pts`
+    ? `${fmtValue(r.values[c.key], c)} · ${rk ? `rank ${rk.rank}` : "no rank"} · ${p} pts`
     : "";
-  return `<td class="num${heat == null ? "" : " heat"}${c.scored ? "" : " unscored"}"${style} title="${esc(tip)}">${text}</td>`;
+  const cls = ["num", heat == null ? "" : "heat", c.scored ? "" : "unscored", lead ? "lead" : ""].filter(Boolean).join(" ");
+  return `<td class="${cls}"${style} title="${esc(tip)}">${text}</td>`;
 }
 
 function render() {
@@ -45,18 +66,18 @@ function render() {
   const cats = board.cats.filter((c) => !c.toggledBy || expanded.has(c.toggledBy));
 
   const head = `<tr>
-    <th class="num">#</th><th>Team</th><th class="num score">Score</th>
+    <th class="num col-rank">#</th><th class="team">Team</th><th class="num score">Score</th>
     ${cats.map((c) => headerCell(c, board.cats)).join("")}
   </tr>`;
 
   const body = rows.map((r) => `<tr>
-    <td class="num">${r.rank}</td>
-    <td><strong>${esc(r.name)}</strong></td>
+    <td class="num col-rank">${r.rank}</td>
+    <td class="team" title="${esc(r.name)}"><strong><span class="full">${esc(r.name)}</span><span class="abbr">${esc(abbrOf(r.name))}</span></strong></td>
     <td class="num score"><strong>${r.score}</strong></td>
     ${cats.map((c) => bodyCell(r, c, maxPerCat)).join("")}
   </tr>`).join("");
 
-  $("#board").innerHTML = `<div class="table-wrap"><table class="board"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  $("#board").innerHTML = `<div class="table-wrap"><table class="board${week === ALL ? " totals" : ""}"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
   $("#board").querySelectorAll("[data-toggle]").forEach((th) =>
     th.addEventListener("click", () => {
       const k = th.dataset.toggle;
@@ -70,7 +91,7 @@ function render() {
   const notes = [
     `Each category gives ${config.pointsWin} points for every team you beat and ${config.pointsTie} for every tie (max ${maxPerCat} per category, ${maxScore} total).`,
     dropped.length
-      ? `* Not counted in Score this week: ${dropped.map((c) => `${esc(c.label)} (missing for ${esc(c.missing.join(", "))})`).join("; ")}.`
+      ? `* Not counted in Score ${week === ALL ? "for all weeks" : "this week"}: ${dropped.map((c) => `${esc(c.label)} (missing for ${esc(c.missing.join(", "))})`).join("; ")}.`
       : "",
     fetched ? `Data fetched ${esc(fetched)}.` : "",
   ];
@@ -79,7 +100,6 @@ function render() {
 
 async function init() {
   document.title = config.leagueName;
-  $("#league").textContent = config.leagueName;
 
   try {
     data = await loadData();
@@ -94,17 +114,27 @@ async function init() {
   }
 
   const weeks = weeksOf(data.teams);
-  const sel = $("#week-select");
-  sel.innerHTML = weeks.slice().reverse().map((w) => `<option>${esc(w)}</option>`).join("");
-  sel.addEventListener("change", () => { week = sel.value; render(); });
+  const tabs = $("#week-tabs");
+  tabs.innerHTML = [...weeks, ALL].map((w) => `<button role="tab" data-week="${esc(w)}">${esc(w)}</button>`).join("");
+  const selectWeek = (w) => {
+    week = w;
+    tabs.querySelectorAll("[data-week]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.week === w)));
+    render();
+  };
+  tabs.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-week]");
+    if (b) selectWeek(b.dataset.week);
+  });
   $("#show-rank").addEventListener("change", (e) => { showRank = e.target.checked; render(); });
+  $("#show-heat").checked = showHeat;
+  $("#show-heat").addEventListener("change", (e) => { showHeat = e.target.checked; writePref("heatmap", showHeat); render(); });
 
   if (!weeks.length) {
     $("#board").innerHTML = `<p class="empty">No weeks found in the sheet yet.</p>`;
     return;
   }
-  week = weeks.at(-1);
-  render();
+  selectWeek(weeks.at(-1));
+  tabs.scrollLeft = tabs.scrollWidth; // latest week in view when there are many
 }
 
 init();

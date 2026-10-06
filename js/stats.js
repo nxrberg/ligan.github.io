@@ -5,12 +5,26 @@ export const weeksOf = (teams) =>
     .sort((a, b) => a[1] - b[1])
     .map(([week]) => week);
 
+export const ALL = "All";
+
+// One team's stat line over every week: counting stats are summed, SV% is recomputed from the
+// summed SV/SA. A stat missing in any of the team's weeks is missing in the total too.
+function allWeeksLine(team) {
+  const ws = Object.values(team.weeks);
+  if (!ws.length) return null;
+  const sum = (k) => ws.reduce((acc, w) => (acc == null || w.stats[k] == null ? null : acc + w.stats[k]), 0);
+  const stats = {};
+  for (const c of config.categories) if (c.key !== "svp") stats[c.key] = sum(c.key);
+  stats.svp = stats.sv != null && stats.sa ? stats.sv / stats.sa : null;
+  return { week: ALL, fetched: ws.map((w) => w.fetched).sort().at(-1), stats };
+}
+
 // Score = for every scored category, pointsWin per team you beat and pointsTie per team you tie.
 // A category is left out of Score when any team is missing it, so nobody gets points for a gap.
 // Exception: `noValueLoses` categories (SV% with no shots faced) still count; the team without
 // a value beats and ties nobody.
 export function weeklyBoard(teams, week) {
-  const lines = teams.map((t) => ({ name: t.name, line: t.weeks[week] || null }));
+  const lines = teams.map((t) => ({ name: t.name, line: week === ALL ? allWeeksLine(t) : t.weeks[week] || null }));
   const cats = config.categories.map((c) => {
     const missing = lines
       .filter((l) => !l.line || (l.line.stats[c.key] == null && !c.noValueLoses))

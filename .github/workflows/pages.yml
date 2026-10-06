@@ -5,8 +5,12 @@ name: Deploy site
 on:
   push:
     branches: [main]
+  # Daily at 10:10 Swedish time, 10 minutes after the Pi updates the sheet. Cron runs in UTC,
+  # so both candidates are scheduled and the gate job keeps the one that is 10:10 in Stockholm
+  # (08:10 UTC in summer time, 09:10 UTC in winter time).
   schedule:
-    - cron: "0 6 * * *" # daily, 06:00 UTC
+    - cron: "10 8 * * *"
+    - cron: "10 9 * * *"
   workflow_dispatch:
 
 permissions:
@@ -19,7 +23,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - id: check
+        env:
+          EVENT: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          if [ "$EVENT" != "schedule" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$(TZ=Europe/Stockholm date +%z)" = "+0200" ]; then want="10 8 * * *"; else want="10 9 * * *"; fi
+          if [ "$SCHEDULE" = "$want" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
+
   deploy:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

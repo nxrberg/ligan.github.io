@@ -4,7 +4,11 @@ Leaderboard and stats site for our Yahoo fantasy hockey league. Plain HTML/CSS/J
 
 ## Weekly leaderboard
 
-Shows every team's category totals for the selected week plus a **Score** column. In each scored category a team gets 2 points for every other team it beats and 1 point for every tie (max 22 per category with 12 teams). Score is the sum over all scored categories. Cells are shaded by how many points they earned; tick "Show category rank" to see each team's rank in every category instead of the stats ("T3" means tied for 3rd). SV and SA don't count toward Score and are hidden; click the SV% header to show them.
+Shows every team's category totals for the selected week plus a **Score** column. In each scored category a team gets 2 points for every other team it beats and 1 point for every tie (max 22 per category with 12 teams). Score is the sum over all scored categories. Cells are shaded by how many points they earned; tick "Show category rank" to see each team's rank in every category instead of the stats (tied teams share a rank). SV and SA don't count toward Score and are hidden; click the SV% header to show them. Each category's leader (or leaders, when tied) gets a gold border and a ★. The "Heatmap" toggle turns the shading off and on, and the browser remembers the choice.
+
+The table is built for phones first: on narrow screens it uses smaller type, shows each team's short name (`abbr` in `js/config.js`) and hides the overall # column so all 10 scored categories fit without scrolling. Full names and the # column come back on wider screens.
+
+Pick a week from the tabs above the table. The **All** tab adds up every week (SV% from the summed SV/SA) and scores those totals the same way; a stat missing in any of a team's weeks is missing from its total.
 
 Categories, points per win/tie, and which categories count are set in `js/config.js`. A category is left out of Score for everyone if any team is missing it that week.
 
@@ -28,7 +32,7 @@ Then open http://localhost:8000. (Opening `index.html` directly won't work becau
 
 ## Deploy
 
-`.github/workflows/pages.yml` fetches the data and publishes to GitHub Pages on every push to `main`, once a day at 06:00 UTC, and on demand (Actions → Deploy site → Run workflow). Each run costs one Sheety request per team (12).
+`.github/workflows/pages.yml` fetches the data and publishes to GitHub Pages on every push to `main`, once a day at 10:10 Swedish time (10 minutes after the Pi updates the sheet), and on demand (Actions → Deploy site → Run workflow). Each run costs one Sheety request per team (12).
 
 One-time setup in the GitHub repo:
 1. Settings → Pages → Source: **GitHub Actions**.

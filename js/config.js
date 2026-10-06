@@ -6,19 +6,20 @@ export const config = {
   dataUrl: "data/league.json",
 
   // `sheet` is the Sheety endpoint name for the team's tab (it gets URL-encoded, so "#10" and "q's" are fine).
+  // `abbr` is the short name shown on narrow screens.
   teams: [
-    { name: "Zegeltorp Warriors", sheet: "zegeltorpWarriors" },
-    { name: "The Chalupa Batmans", sheet: "theChalupaBatmans" },
-    { name: "#10", sheet: "#10" },
-    { name: "Elnour", sheet: "elnour" },
-    { name: "Fiskens HC", sheet: "fiskensHc" },
-    { name: "Frippe IK", sheet: "frippeIk" },
-    { name: "Kingkordies", sheet: "kingkordies" },
-    { name: "Kyrkbyn Bullies", sheet: "kyrkbynBullies" },
-    { name: "Pucks N Roses", sheet: "pucksNRoses" },
-    { name: "Q's", sheet: "q's" },
-    { name: "Riverland", sheet: "riverland" },
-    { name: "Team Svensson", sheet: "teamSvensson" },
+    { name: "Zegeltorp Warriors", sheet: "zegeltorpWarriors", abbr: "ZEG" },
+    { name: "The Chalupa Batmans", sheet: "theChalupaBatmans", abbr: "CHA" },
+    { name: "#10", sheet: "#10", abbr: "#10" },
+    { name: "Elnour", sheet: "elnour", abbr: "ELN" },
+    { name: "Fiskens HC", sheet: "fiskensHc", abbr: "FHC" },
+    { name: "Frippe IK", sheet: "frippeIk", abbr: "FIK" },
+    { name: "Kingkordies", sheet: "kingkordies", abbr: "KKD" },
+    { name: "Kyrkbyn Bullies", sheet: "kyrkbynBullies", abbr: "KYR" },
+    { name: "Pucks N Roses", sheet: "pucksNRoses", abbr: "PNR" },
+    { name: "Q's", sheet: "q's", abbr: "Q'S" },
+    { name: "Riverland", sheet: "riverland", abbr: "RIV" },
+    { name: "Team Svensson", sheet: "teamSvensson", abbr: "SVE" },
   ],
 
   // Scoring categories, in display order. `key` is the stat's name after parsing (see data.js).

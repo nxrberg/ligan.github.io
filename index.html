@@ -8,25 +8,17 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header>
-    <div class="brand"><span>🏒</span> <h1 id="league">Ligan</h1></div>
-    <nav role="tablist">
-      <button role="tab" aria-selected="true">Weekly leaderboard</button>
-    </nav>
-  </header>
-
   <main>
     <p id="status" class="status" hidden></p>
 
     <section>
-      <div class="row">
-        <h2>Weekly leaderboard</h2>
-        <div class="controls">
-          <label class="toggle"><input type="checkbox" id="show-rank" /> Show category rank</label>
-          <select id="week-select" aria-label="Week"></select>
-        </div>
-      </div>
+      <h2>H2H cats - alla mot alla</h2>
+      <div id="week-tabs" class="week-tabs" role="tablist" aria-label="Week"></div>
       <div id="board"></div>
+      <div class="controls">
+        <label class="toggle"><input type="checkbox" id="show-rank" /> Show category rank</label>
+        <label class="toggle"><input type="checkbox" id="show-heat" checked /> Heatmap</label>
+      </div>
       <div id="notes" class="notes"></div>
     </section>
   </main>

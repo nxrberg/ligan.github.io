@@ -3,7 +3,7 @@
 :root {
   --panel: #ffffff;
   --head: #f6f6f4;
-  --zebra: #fafaf8;
+  --zebra: #fcfcfb;
   --chip: #ebebe7;
   --text: #3b3f42;
   --muted: #8f9497;
@@ -16,7 +16,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --panel: #121a1e; --head: #172126; --zebra: #151d21; --chip: #222c31;
+    --panel: #121a1e; --head: #172126; --zebra: #141b1f; --chip: #222c31;
     --text: #d7dcde; --muted: #7f8a90; --faint: #4c575c; --line: #26302f;
     --accent: #5aa0c2; --on-accent: #08161d; --lead: #e3b341;
   }

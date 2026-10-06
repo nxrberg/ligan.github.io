@@ -1,0 +1,47 @@
+// The Yahoo export sheet has one tab per team. scripts/fetch-data.mjs pulls every tab from
+// Sheety (URL in the SHEETY_BASE secret) into `dataUrl`, which is all the browser loads.
+export const config = {
+  leagueName: "Ligan",
+
+  dataUrl: "data/league.json",
+
+  // `sheet` is the Sheety endpoint name for the team's tab (it gets URL-encoded, so "#10" and "q's" are fine).
+  teams: [
+    { name: "Zegeltorp Warriors", sheet: "zegeltorpWarriors" },
+    { name: "The Chalupa Batmans", sheet: "theChalupaBatmans" },
+    { name: "#10", sheet: "#10" },
+    { name: "Elnour", sheet: "elnour" },
+    { name: "Fiskens HC", sheet: "fiskensHc" },
+    { name: "Frippe IK", sheet: "frippeIk" },
+    { name: "Kingkordies", sheet: "kingkordies" },
+    { name: "Kyrkbyn Bullies", sheet: "kyrkbynBullies" },
+    { name: "Pucks N Roses", sheet: "pucksNRoses" },
+    { name: "Q's", sheet: "q's" },
+    { name: "Riverland", sheet: "riverland" },
+    { name: "Team Svensson", sheet: "teamSvensson" },
+  ],
+
+  // Scoring categories, in display order. `key` is the stat's name after parsing (see data.js).
+  // scored: false shows the column without counting it toward Score.
+  // lowerIsBetter: true flips the comparison (e.g. GAA).
+  // noValueLoses: true keeps scoring the category when a team has no value; that team gets 0.
+  // toggledBy: hidden until you click the header of that category (SV and SA open from SV%).
+  categories: [
+    { key: "g", label: "G" },
+    { key: "a", label: "A" },
+    { key: "pm", label: "+/-" },
+    { key: "pim", label: "PIM" },
+    { key: "ppp", label: "PPP" },
+    { key: "gwg", label: "GWG" },
+    { key: "sog", label: "SOG" },
+    { key: "w", label: "W" },
+    { key: "sv", label: "SV", scored: false, toggledBy: "svp" },
+    { key: "sa", label: "SA", scored: false, toggledBy: "svp" },
+    { key: "svp", label: "SV%", format: "pct", noValueLoses: true },
+    { key: "sho", label: "SHO" },
+  ],
+
+  // Points per opponent in each category.
+  pointsWin: 2,
+  pointsTie: 1,
+};

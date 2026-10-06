@@ -89,6 +89,10 @@ tbody tr:hover td { background-color: var(--head); }
 .board th:first-child, .board td:first-child { padding-left: 6px; }
 .board th:last-child, .board td:last-child { padding-right: 6px; }
 .board .team { text-align: left; font-weight: 600; }
+/* Fixed layout: # and Team get set widths, every category column shares the rest equally. */
+.board { table-layout: fixed; }
+.board th.team { width: 3.4em; }
+.board th.col-rank { width: 2.4em; }
 .board .cat { text-align: center; }
 .board .team .full { display: none; }
 .board .col-rank { display: none; }
@@ -111,6 +115,7 @@ tbody tr:hover td { background-color: var(--head); }
   .board th, .board td, .board.totals th, .board.totals td { padding: 10px 4px; }
   .board th, .board.totals th { font-size: 10px; letter-spacing: 0.06em; }
   .board .col-rank { display: table-cell; }
+  .board th.team { width: 4.6em; }
 }
 @media (min-width: 760px) {
   .board, .board.totals { font-size: 14px; }
@@ -118,5 +123,6 @@ tbody tr:hover td { background-color: var(--head); }
   .board th, .board.totals th { font-size: 12px; letter-spacing: 0.12em; }
   .board .team .full { display: inline; }
   .board .team .abbr { display: none; }
+  .board th.team { width: 15.5em; }
   .board td.lead::before { content: "★ "; color: var(--lead); font-size: 11px; }
 }

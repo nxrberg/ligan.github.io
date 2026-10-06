@@ -50,7 +50,7 @@ function headerHtml(h) {
     ? `<button class="col-toggle" data-toggle="${cat.key}" title="${expanded.has(cat.key) ? "Hide" : "Show"} ${opens.map((o) => o.label).join(" and ")}">${expanded.has(cat.key) ? "▾" : "▸"}</button>`
     : "";
   const arrow = sorted ? `<span class="sort-dir">${sorted === "desc" ? "▼" : "▲"}</span>` : "";
-  return `<th class="${classes}" data-col="${h.column.id}" title="${esc(tip)}">${esc(label)}${cat?.dropped ? "*" : ""}${arrow}${toggle}</th>`;
+  return `<th class="${classes}" data-col="${h.column.id}" title="${esc(tip)}">${esc(label)}${arrow}${toggle}</th>`;
 }
 
 function cellHtml(cell, maxPerCat) {
@@ -137,7 +137,7 @@ function render() {
   const info = [
     `Each category gives ${config.pointsWin} points for every team you beat and ${config.pointsTie} for every tie (max ${maxPerCat} per category, ${maxScore} total).`,
     dropped.length
-      ? `* Not counted in Score ${week === ALL ? "for all weeks" : "this week"}: ${dropped.map((c) => `${esc(c.label)} (missing for ${esc(c.missing.join(", "))})`).join("; ")}.`
+      ? `Not counted in Score ${week === ALL ? "for all weeks" : "this week"}: ${dropped.map((c) => `${esc(c.label)} (missing for ${esc(c.missing.join(", "))})`).join("; ")}.`
       : "",
   ].filter(Boolean);
   $("#notes").innerHTML = `${fetched ? `<p>Data fetched ${esc(fetched)}.</p>` : ""}

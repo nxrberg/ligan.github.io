@@ -3,6 +3,7 @@
 :root {
   --panel: #ffffff;
   --head: #f6f6f4;
+  --zebra: #f5f5f0;
   --chip: #ebebe7;
   --text: #3b3f42;
   --muted: #8f9497;
@@ -15,7 +16,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --panel: #121a1e; --head: #172126; --chip: #222c31;
+    --panel: #121a1e; --head: #172126; --zebra: #19242a; --chip: #222c31;
     --text: #d7dcde; --muted: #7f8a90; --faint: #4c575c; --line: #26302f;
     --accent: #5aa0c2; --on-accent: #08161d; --lead: #e3b341;
   }
@@ -75,7 +76,9 @@ table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
 th { background: var(--head); color: var(--muted); font-weight: 500; text-transform: uppercase; }
 tbody tr:last-child td { border-bottom: 0; }
-tbody tr:hover td { background-color: color-mix(in srgb, var(--head) 70%, transparent); }
+/* Zebra rows; heatmap and Score shading are drawn on top as background images so the stripes show through. */
+tbody tr:nth-child(even) td { background-color: var(--zebra); }
+tbody tr:hover td { background-color: var(--head); }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Mobile first: small type and tight cells so all 10 categories fit a phone; the overall #
@@ -89,8 +92,8 @@ tbody tr:hover td { background-color: color-mix(in srgb, var(--head) 70%, transp
 .board .cat { text-align: center; }
 .board .team .full { display: none; }
 .board .col-rank { display: none; }
-.board td.score { font-weight: 700; font-size: 11.5px; background: color-mix(in srgb, var(--head) 80%, transparent); }
-.board td.heat { background: color-mix(in srgb, var(--accent) calc(var(--heat) * 0.4), transparent); }
+.board td.score { font-weight: 700; font-size: 11.5px; background-image: linear-gradient(color-mix(in srgb, var(--chip) 45%, transparent), color-mix(in srgb, var(--chip) 45%, transparent)); }
+.board td.heat { --heat-c: color-mix(in srgb, var(--accent) calc(var(--heat) * 0.4), transparent); background-image: linear-gradient(var(--heat-c), var(--heat-c)); }
 .board .unscored { color: var(--muted); }
 .board td.lead { font-weight: 700; }
 .board th.sortable { cursor: pointer; user-select: none; }

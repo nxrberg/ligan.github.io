@@ -92,7 +92,7 @@ tbody tr:hover td { background-color: var(--head); }
 .board .cat { text-align: center; }
 .board .team .full { display: none; }
 .board .col-rank { display: none; }
-.board td.score { font-weight: 700; font-size: 11.5px; background-image: linear-gradient(color-mix(in srgb, var(--chip) 45%, transparent), color-mix(in srgb, var(--chip) 45%, transparent)); }
+.board .team-score { display: block; font-size: 1.15em; font-weight: 700; color: var(--accent); }
 .board td.heat { --heat-c: color-mix(in srgb, var(--accent) calc(var(--heat) * 0.4), transparent); background-image: linear-gradient(var(--heat-c), var(--heat-c)); }
 .board .unscored { color: var(--muted); }
 .board td.lead { font-weight: 700; }
@@ -118,6 +118,5 @@ tbody tr:hover td { background-color: var(--head); }
   .board th, .board.totals th { font-size: 12px; letter-spacing: 0.12em; }
   .board .team .full { display: inline; }
   .board .team .abbr { display: none; }
-  .board td.score { font-size: 15px; }
   .board td.lead::before { content: "★ "; color: var(--lead); font-size: 11px; }
 }

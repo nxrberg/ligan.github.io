@@ -35,7 +35,7 @@ function abbrOf(name) {
 
 function fmtValue(v, cat) {
   if (v == null) return "–";
-  if (cat.format === "pct") return v.toFixed(3).replace(/^0/, "");
+  if (cat.format === "pct") return v >= 1 ? "1.00" : v.toFixed(3).replace(/^0/, "");
   return String(v);
 }
 
@@ -70,7 +70,7 @@ function cellHtml(cell, maxPerCat) {
   const tip = c.scored
     ? `${fmtValue(r.values[c.key], c)} · ${rk ? `rank ${rk.rank}` : "no rank"} · ${p} pts`
     : "";
-  const classes = ["num", heat == null ? "" : "heat", c.scored ? "" : "unscored", lead ? "lead" : ""].filter(Boolean).join(" ");
+  const classes = ["num cat", heat == null ? "" : "heat", c.scored ? "" : "unscored", lead ? "lead" : ""].filter(Boolean).join(" ");
   return `<td class="${classes}"${style} title="${esc(tip)}">${text}</td>`;
 }
 
@@ -81,7 +81,7 @@ function columnsFor(cats) {
     col("rank", "#", (r) => r.rank, { sortDescFirst: false, meta: { cls: "num col-rank" } }),
     col("team", "Team", (r) => r.name, { sortDescFirst: false, sortingFn: "text", meta: { cls: "team" } }),
     ...cats.map((c) =>
-      col(c.key, c.label, (r) => r.values[c.key] ?? undefined, { sortDescFirst: !c.lowerIsBetter, sortingFn: "basic", meta: { cat: c, cls: "num" } })
+      col(c.key, c.label, (r) => r.values[c.key] ?? undefined, { sortDescFirst: !c.lowerIsBetter, sortingFn: "basic", meta: { cat: c, cls: "num cat" } })
     ),
     col("score", "Score", (r) => r.score, { sortDescFirst: true, meta: { cls: "num score" } }),
   ];

@@ -1,6 +1,8 @@
 import { config } from "./config.js";
 import { loadData } from "./data.js";
 import { ALL, weeksOf, weeklyBoard } from "./stats.js";
+// TanStack Table (headless, MIT) from a pinned CDN build, so the site still needs no build step.
+import { createTable, getCoreRowModel, getSortedRowModel } from "https://cdn.jsdelivr.net/npm/@tanstack/table-core@8.21.3/+esm";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -8,7 +10,9 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 let data;
 let week;
 let showRank = false;
+let sorting = [{ id: "score", desc: true }]; // click a column header to sort by it
 let showHeat = readPref("heatmap", true);
+let infoOpen = false; // "More information" under the table stays open across re-renders
 const expanded = new Set(); // categories whose `toggledBy` columns are showing
 
 // Per-viewer display preferences; storage can be unavailable, so fall back quietly.
@@ -35,18 +39,28 @@ function fmtValue(v, cat) {
   return String(v);
 }
 
-function headerCell(c, cats) {
-  const opens = cats.filter((o) => o.toggledBy === c.key);
-  const cls = ["num", c.scored ? "" : "unscored", opens.length ? "toggle-col" : ""].filter(Boolean).join(" ");
-  const tip = opens.length
-    ? `Click to ${expanded.has(c.key) ? "hide" : "show"} ${opens.map((o) => o.label).join(" and ")}`
-    : c.dropped ? `Not scored: missing for ${c.missing.join(", ")}`
-    : c.scored ? "" : "Not counted in Score";
-  const arrow = opens.length ? (expanded.has(c.key) ? " ▾" : " ▸") : "";
-  return `<th class="${cls}" title="${esc(tip)}"${opens.length ? ` data-toggle="${c.key}"` : ""}>${esc(c.label)}${c.dropped ? "*" : ""}${arrow}</th>`;
+function headerHtml(h) {
+  const { cat, cls = "", label } = h.column.columnDef.meta;
+  const sorted = h.column.getIsSorted();
+  const opens = cat ? allCats.filter((o) => o.toggledBy === cat.key) : [];
+  const tip = cat?.dropped ? `Not scored: missing for ${cat.missing.join(", ")}`
+    : cat && !cat.scored ? "Not counted in Score" : `Sort by ${label}`;
+  const classes = [cls, "sortable", sorted ? "sorted" : "", cat && !cat.scored ? "unscored" : ""].filter(Boolean).join(" ");
+  const toggle = opens.length
+    ? `<button class="col-toggle" data-toggle="${cat.key}" title="${expanded.has(cat.key) ? "Hide" : "Show"} ${opens.map((o) => o.label).join(" and ")}">${expanded.has(cat.key) ? "▾" : "▸"}</button>`
+    : "";
+  const arrow = sorted ? `<span class="sort-dir">${sorted === "desc" ? "▼" : "▲"}</span>` : "";
+  return `<th class="${classes}" data-col="${h.column.id}" title="${esc(tip)}">${esc(label)}${cat?.dropped ? "*" : ""}${arrow}${toggle}</th>`;
 }
 
-function bodyCell(r, c, maxPerCat) {
+function cellHtml(cell, maxPerCat) {
+  const r = cell.row.original;
+  const { cat: c, cls = "" } = cell.column.columnDef.meta;
+  if (cell.column.id === "rank") return `<td class="${cls}">${r.rank}</td>`;
+  if (cell.column.id === "team")
+    return `<td class="${cls}" title="${esc(r.name)}"><strong><span class="full">${esc(r.name)}</span><span class="abbr">${esc(abbrOf(r.name))}</span></strong></td>`;
+  if (cell.column.id === "score") return `<td class="${cls}"><strong>${r.score}</strong></td>`;
+
   const p = r.points[c.key];
   const heat = showHeat && c.scored && p != null ? p / maxPerCat : null;
   const style = heat == null ? "" : ` style="--heat:${Math.round(heat * 100)}%"`;
@@ -56,46 +70,79 @@ function bodyCell(r, c, maxPerCat) {
   const tip = c.scored
     ? `${fmtValue(r.values[c.key], c)} · ${rk ? `rank ${rk.rank}` : "no rank"} · ${p} pts`
     : "";
-  const cls = ["num", heat == null ? "" : "heat", c.scored ? "" : "unscored", lead ? "lead" : ""].filter(Boolean).join(" ");
-  return `<td class="${cls}"${style} title="${esc(tip)}">${text}</td>`;
+  const classes = ["num", heat == null ? "" : "heat", c.scored ? "" : "unscored", lead ? "lead" : ""].filter(Boolean).join(" ");
+  return `<td class="${classes}"${style} title="${esc(tip)}">${text}</td>`;
 }
+
+// Column definitions for TanStack Table. Sorting compares raw values; teams without a value go last.
+function columnsFor(cats) {
+  const col = (id, label, accessorFn, { meta, ...opts } = {}) => ({ id, accessorFn, sortUndefined: "last", ...opts, meta: { label, ...meta } });
+  return [
+    col("rank", "#", (r) => r.rank, { sortDescFirst: false, meta: { cls: "num col-rank" } }),
+    col("team", "Team", (r) => r.name, { sortDescFirst: false, sortingFn: "text", meta: { cls: "team" } }),
+    ...cats.map((c) =>
+      col(c.key, c.label, (r) => r.values[c.key] ?? undefined, { sortDescFirst: !c.lowerIsBetter, sortingFn: "basic", meta: { cat: c, cls: "num" } })
+    ),
+    col("score", "Score", (r) => r.score, { sortDescFirst: true, meta: { cls: "num score" } }),
+  ];
+}
+
+function makeTable(rows, cats) {
+  const table = createTable({
+    data: rows,
+    columns: columnsFor(cats),
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    enableSortingRemoval: false,
+    state: {},
+    onStateChange: () => {},
+    renderFallbackValue: null,
+  });
+  const visibility = Object.fromEntries(cats.filter((c) => c.toggledBy).map((c) => [c.key, expanded.has(c.toggledBy)]));
+  table.setOptions((o) => ({
+    ...o,
+    state: { ...table.initialState, sorting, columnVisibility: visibility },
+    onSortingChange: (u) => { sorting = typeof u === "function" ? u(sorting) : u; render(); },
+  }));
+  return table;
+}
+
+let allCats = [];
 
 function render() {
   const board = weeklyBoard(data.teams, week);
   const { rows, maxPerCat, maxScore } = board;
-  const cats = board.cats.filter((c) => !c.toggledBy || expanded.has(c.toggledBy));
+  allCats = board.cats;
+  const table = makeTable(rows, board.cats);
 
-  const head = `<tr>
-    <th class="num col-rank">#</th><th class="team">Team</th><th class="num score">Score</th>
-    ${cats.map((c) => headerCell(c, board.cats)).join("")}
-  </tr>`;
-
-  const body = rows.map((r) => `<tr>
-    <td class="num col-rank">${r.rank}</td>
-    <td class="team" title="${esc(r.name)}"><strong><span class="full">${esc(r.name)}</span><span class="abbr">${esc(abbrOf(r.name))}</span></strong></td>
-    <td class="num score"><strong>${r.score}</strong></td>
-    ${cats.map((c) => bodyCell(r, c, maxPerCat)).join("")}
-  </tr>`).join("");
+  const head = table.getHeaderGroups().map((g) => `<tr>${g.headers.map(headerHtml).join("")}</tr>`).join("");
+  const body = table.getRowModel().rows
+    .map((row) => `<tr>${row.getVisibleCells().map((cell) => cellHtml(cell, maxPerCat)).join("")}</tr>`)
+    .join("");
 
   $("#board").innerHTML = `<div class="table-wrap"><table class="board${week === ALL ? " totals" : ""}"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
-  $("#board").querySelectorAll("[data-toggle]").forEach((th) =>
-    th.addEventListener("click", () => {
-      const k = th.dataset.toggle;
+  $("#board").querySelector("thead").addEventListener("click", (e) => {
+    const t = e.target.closest("[data-toggle]");
+    if (t) {
+      const k = t.dataset.toggle;
       expanded.has(k) ? expanded.delete(k) : expanded.add(k);
-      render();
-    })
-  );
+      return render();
+    }
+    const th = e.target.closest("[data-col]");
+    if (th) table.getColumn(th.dataset.col).toggleSorting();
+  });
 
   const dropped = board.cats.filter((c) => c.dropped);
   const fetched = rows.map((r) => r.line?.fetched).filter(Boolean).sort().at(-1);
-  const notes = [
+  const info = [
     `Each category gives ${config.pointsWin} points for every team you beat and ${config.pointsTie} for every tie (max ${maxPerCat} per category, ${maxScore} total).`,
     dropped.length
       ? `* Not counted in Score ${week === ALL ? "for all weeks" : "this week"}: ${dropped.map((c) => `${esc(c.label)} (missing for ${esc(c.missing.join(", "))})`).join("; ")}.`
       : "",
-    fetched ? `Data fetched ${esc(fetched)}.` : "",
-  ];
-  $("#notes").innerHTML = notes.filter(Boolean).map((n) => `<p>${n}</p>`).join("");
+  ].filter(Boolean);
+  $("#notes").innerHTML = `${fetched ? `<p>Data fetched ${esc(fetched)}.</p>` : ""}
+    <details${infoOpen ? " open" : ""}><summary>More information</summary>${info.map((n) => `<p>${n}</p>`).join("")}</details>`;
+  $("#notes details").addEventListener("toggle", (e) => { infoOpen = e.target.open; });
 }
 
 async function init() {

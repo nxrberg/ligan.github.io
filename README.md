@@ -23,6 +23,7 @@ Categories, points per win/tie, and which categories count are set in `js/config
 - One bad export (2026-10-05 22:57) wrote every stat one column to the right. The site spots those fetches (the goalie totals' SHO holds a fraction) and shifts the values back, but the last column (SOG, SHO) is lost in them. Re-exporting the week replaces them.
 - SV% is recomputed from SV / SA.
 - Yahoo shows "-" for a category with no stats yet. The site reads that as 0, except SV%, where it means no value; a team with no SV% gets 0 points in that category while it still counts for everyone else.
+- After every export the Pi (`write_sheet.py`) uploads all tabs as `league.json` to the `data` branch of this repo, and the site reads that file (`liveDataUrl` in `js/config.js`) on each page load, so new data shows up within a few minutes without a deploy. If it can't be read, the site uses the copy from the last deploy.
 - The browser never reads the sheet. `scripts/fetch-data.mjs` pulls every tab into `data/league.json`, and the deploy job runs it, so the credentials stay in repository secrets. Without `data/league.json` the site shows `data/sample.json`.
 
 ## Run locally

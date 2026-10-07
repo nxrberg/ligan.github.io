@@ -82,22 +82,51 @@ function logosOf(rows) {
   return m;
 }
 
-// data/league.json is written by scripts/fetch-data.mjs (the deploy job runs it).
-// Without it, e.g. when running locally, the site falls back to data/sample.json.
-export async function loadData() {
-  let source = "live";
-  let res = await fetch(config.dataUrl, { cache: "no-cache" });
-  if (!res.ok) {
-    source = "sample";
-    res = await fetch("data/sample.json");
+// Where the data comes from, newest first:
+//   1. config.liveDataUrl: the file the Pi uploads after every export, read on each page load,
+//      so new data shows up without a deploy.
+//   2. config.dataUrl: the copy baked into the last deploy (scripts/fetch-data.mjs).
+//   3. data/sample.json, e.g. when running locally without either.
+async function fetchJson(url) {
+  try {
+    const res = await fetch(url, { cache: "no-cache" });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
   }
-  if (!res.ok) throw new Error(`couldn't load ${config.dataUrl} (${res.status})`);
-  const all = await res.json();
-  const logos = logosOf(rowsOf(all[config.teamsSheet] || []));
+}
+
+// A data file is usable when it has rows for at least one team.
+const hasTeams = (all) => all && config.teams.some((t) => rowsOf(tabOf(all, t.sheet, t.name) || []).length);
+
+// The deploy keys tabs by Sheety name ("zegeltorpWarriors"), the Pi upload by tab title
+// ("Zegeltorp Warriors"); accept either.
+function tabOf(all, ...names) {
+  for (const n of names) if (all[n]) return all[n];
+  const wanted = names.map(key);
+  const k = Object.keys(all).find((k) => wanted.includes(key(k)));
+  return k ? all[k] : null;
+}
+
+export async function loadData() {
+  // A per-minute query string gets past CDN caching of the uploaded file.
+  const live = config.liveDataUrl && (await fetchJson(`${config.liveDataUrl}?m=${Math.floor(Date.now() / 60000)}`));
+  let source = "live";
+  let all = hasTeams(live) ? live : null;
+  if (!all) {
+    const deployed = await fetchJson(config.dataUrl);
+    if (hasTeams(deployed)) all = deployed;
+  }
+  if (!all) {
+    source = "sample";
+    all = await fetchJson("data/sample.json");
+  }
+  if (!all) throw new Error(`couldn't load ${config.dataUrl}`);
+  const logos = logosOf(rowsOf(tabOf(all, config.teamsSheet) || []));
   const teams = config.teams.map((t) => ({
     ...t,
     logo: logos.get(key(t.name)) || logos.get(key(t.sheet)) || null,
-    weeks: parseTeam(rowsOf(all[t.sheet] || [])),
+    weeks: parseTeam(rowsOf(tabOf(all, t.sheet, t.name) || [])),
   }));
   return { source, teams };
 }

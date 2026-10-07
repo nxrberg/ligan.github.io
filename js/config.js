@@ -1,8 +1,13 @@
-// The Yahoo export sheet has one tab per team. scripts/fetch-data.mjs pulls every tab from
-// Sheety (URL in the SHEETY_BASE secret) into `dataUrl`, which is all the browser loads.
+// The Yahoo export sheet has one tab per team. The Pi uploads all tabs to `liveDataUrl` after each
+// export; the deploy also bakes a copy into `dataUrl` (scripts/fetch-data.mjs) as a fallback.
 export const config = {
   leagueName: "Ligan",
 
+  // The Pi uploads the sheet's contents here after every export (branch "data" of the site repo);
+  // the site reads it on each page load, so new data needs no deploy.
+  liveDataUrl: "https://raw.githubusercontent.com/nxrberg/ligan.github.io/data/league.json",
+
+  // Copy baked into the last deploy, used when the live file can't be read.
   dataUrl: "data/league.json",
 
   // Sheety endpoint for the Teams tab (Id, Team, Logo, Updated) that the export writes; gives each team's logo.

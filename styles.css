@@ -23,8 +23,12 @@
 }
 
 * { box-sizing: border-box; }
+/* Phones get the whole page at 125%, like Safari's page zoom two steps up. */
+@media (max-width: 759px) { html { zoom: 1.25; } }
+@media (max-width: 379px) { html { zoom: 1.15; } } /* the smallest phones need the room */
 body {
   margin: 0;
+  -webkit-text-size-adjust: 100%;
   font: 14px/1.45 "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   background: var(--panel);
   color: var(--text);
@@ -84,20 +88,20 @@ tbody tr:hover td { background-color: var(--head); }
 /* Mobile first: small type and tight cells so all 10 categories fit a phone; the overall #
    column and full team names come back as the screen grows. */
 .board { font-size: 10.5px; letter-spacing: -0.03em; }
-.board th, .board td { padding: 8px 2px; }
+.board th, .board td { padding: 8px 1px; }
 .board th { font-size: 9px; letter-spacing: -0.04em; }
 .board th:first-child, .board td:first-child { padding-left: 6px; }
 .board th:last-child, .board td:last-child { padding-right: 6px; }
 .board .team { text-align: left; font-weight: 600; }
 /* Fixed layout: #, Team and Score get set widths, every category column shares the rest equally. */
 .board { table-layout: fixed; }
-.board th.team { width: 3.4em; }
+.board th.team { width: 3.2em; }
 .board th.col-rank { width: 2.4em; }
 .board .cat { text-align: center; }
 .board .team .full { display: none; }
 .board .col-rank { display: none; }
 .board td.score { font-weight: 700; font-size: 11.5px; background-image: linear-gradient(color-mix(in srgb, var(--chip) 45%, transparent), color-mix(in srgb, var(--chip) 45%, transparent)); }
-.board th.score { width: 4.6em; }
+.board th.score { width: 4em; }
 .board td.heat { --heat-c: color-mix(in srgb, var(--accent) calc(var(--heat) * 0.4), transparent); background-image: linear-gradient(var(--heat-c), var(--heat-c)); }
 .board .unscored { color: var(--muted); }
 .board td.lead { font-weight: 700; }

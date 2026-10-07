@@ -35,6 +35,16 @@ function readTotals(row, cols, shifted) {
   return values;
 }
 
+// One skater's row: who he is plus his stat line. gp is null when the export had no GP
+// (the matchup-page export only fills it with --gp).
+function skaterOf(r, shifted) {
+  const v = readTotals(r, SKATER_COLS, shifted);
+  return {
+    player: String(r.player).trim(), nhl: r.nhl || "", pos: r.pos || "",
+    gp: v.gp, stats: { g: v.g, a: v.a, pm: v["+/"], pim: v.pim, ppp: v.ppp, gwg: v.gwg, sog: v.sog },
+  };
+}
+
 const weekNo = (w) => Number(String(w).match(/\d+/)?.[0] ?? 0);
 
 // Collapse one team's rows into { week -> stat line } using the latest fetch of each week.
@@ -58,6 +68,7 @@ function parseTeam(rows) {
       weekNo: weekNo(week),
       fetched: latest,
       shifted,
+      skaters: rs.filter((r) => r.type === "Skater" && r.player).map((r) => skaterOf(r, shifted)),
       stats: {
         g: s.g, a: s.a, pm: s["+/"], pim: s.pim, ppp: s.ppp, gwg: s.gwg, sog: s.sog,
         w: g.w, sv: g.sv, sa: g.sa, sho: g.sho,

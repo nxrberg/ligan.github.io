@@ -1,6 +1,6 @@
 import { config } from "./config.js";
 import { loadData } from "./data.js";
-import { ALL, weeksOf, weeklyBoard } from "./stats.js";
+import { ALL, SKATER_CATS, seasonSkaters, threeStars, weeksOf, weeklyBoard } from "./stats.js";
 // TanStack Table (headless, MIT) from a pinned CDN build, so the site still needs no build step.
 import { createTable, getCoreRowModel, getSortedRowModel } from "https://cdn.jsdelivr.net/npm/@tanstack/table-core@8.21.3/+esm";
 
@@ -36,8 +36,11 @@ function abbrOf(name) {
 // Team logo from the Teams tab; if it fails to load, the cell falls back to the abbreviation.
 function logoHtml(r) {
   if (!r.logo) return "";
-  return `<img class="logo" src="${esc(r.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('has-logo');this.remove()">`;
+  return `<img class="logo" src="${esc(r.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.has-logo')?.classList.remove('has-logo');this.remove()">`;
 }
+
+// Team page address: #/team/zegeltorp-warriors ("#10" becomes "10", "Q's" becomes "qs").
+const slugOf = (name) => name.toLowerCase().replace(/'/g, "").replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "");
 
 function fmtValue(v, cat) {
   if (v == null) return "–";
@@ -67,7 +70,7 @@ function cellHtml(cell, maxPerCat) {
   const { cat: c, cls = "" } = cell.column.columnDef.meta;
   if (cell.column.id === "rank") return `<td class="${cls}">${r.rank}</td>`;
   if (cell.column.id === "team")
-    return `<td class="${cls}${r.logo ? " has-logo" : ""}" title="${esc(r.name)}">${logoHtml(r)}<strong><span class="full">${esc(r.name)}</span><span class="abbr">${esc(abbrOf(r.name))}</span></strong></td>`;
+    return `<td class="${cls}${r.logo ? " has-logo" : ""}" title="${esc(r.name)}"><a class="team-link" href="#/team/${slugOf(r.name)}">${logoHtml(r)}<strong><span class="full">${esc(r.name)}</span><span class="abbr">${esc(abbrOf(r.name))}</span></strong></a></td>`;
   if (cell.column.id === "score") return `<td class="${cls}"><strong>${r.score}</strong></td>`;
 
   const p = r.points[c.key];
@@ -156,6 +159,74 @@ function render() {
   $("#notes details").addEventListener("toggle", (e) => { infoOpen = e.target.open; });
 }
 
+// ---- Team page (#/team/<slug>) ----
+
+const MIN_GP = 3;
+const ordinal = (n) => `${n}${["th", "st", "nd", "rd"][(n % 100 > 10 && n % 100 < 14) || n % 10 > 3 ? 0 : n % 10]}`;
+const perGame = (v) => v.toFixed(2);
+const listOf = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(", ")} and ${xs.at(-1)}` : xs[0] || "");
+
+function starCard(p, i) {
+  const cells = [{ key: "p", label: "P" }, ...SKATER_CATS]
+    .map((c) => `<div class="${c.key === "p" ? "key" : ""}"><dt>${esc(c.label)}</dt><dd>${perGame(p.perGp[c.key])}</dd></div>`)
+    .join("");
+  return `<article class="star-card">
+      <p class="star-rank"><span class="star-icons" aria-hidden="true">${"★".repeat(3 - i)}</span>${ordinal(i + 1)} star</p>
+      <h3>${esc(p.player)}</h3>
+      <p class="star-meta">${[p.nhl, p.pos, `${p.gp} GP`].filter(Boolean).map(esc).join(" · ")}</p>
+      <dl class="star-stats">${cells}</dl>
+    </article>`;
+}
+
+function renderTeam(team) {
+  const season = weeklyBoard(data.teams, ALL).rows.find((r) => r.name === team.name);
+  const { players, weeksWithoutGp } = seasonSkaters(team);
+  const stars = threeStars(players, MIN_GP);
+  const counted = weeksOf([team]).filter((w) => !weeksWithoutGp.includes(w));
+  const logo = team.logo
+    ? `<img src="${esc(team.logo)}" alt="" data-abbr="${esc(abbrOf(team.name))}" referrerpolicy="no-referrer" onerror="this.parentNode.textContent=this.dataset.abbr">`
+    : esc(abbrOf(team.name));
+  const notes = [
+    `Points (G+A) per game played; skaters with at least ${MIN_GP} GP. Every column is the season total divided by GP.`,
+    counted.length ? `Counted: ${esc(listOf(counted))}.` : "",
+    weeksWithoutGp.length ? `Not counted yet: ${esc(listOf(weeksWithoutGp))}, exported without GP.` : "",
+  ].filter(Boolean);
+
+  $("#team-view").innerHTML = `
+    <a class="back" href="#/">‹ Leaderboard</a>
+    <header class="hero">
+      <div class="hero-logo">${logo}</div>
+      <h1>${esc(team.name)}</h1>
+      ${season ? `<p class="hero-meta">${ordinal(season.rank)} of ${data.teams.length} · ${season.score} pts all weeks</p>` : ""}
+    </header>
+    <section class="stars">
+      <h2>3 Stars</h2>
+      ${stars.length
+        ? `<div class="star-cards">${stars.map(starCard).join("")}</div>`
+        : `<p class="empty">No skater has ${MIN_GP} games played yet.</p>`}
+      <div class="notes">${notes.map((n) => `<p>${n}</p>`).join("")}</div>
+    </section>`;
+}
+
+let boardScroll = 0;
+
+// Shows the team page for #/team/<slug>, the leaderboard for anything else.
+function route() {
+  const slug = location.hash.match(/^#\/team\/([^/?]+)/)?.[1];
+  const team = slug && data.teams.find((t) => slugOf(t.name) === decodeURIComponent(slug));
+  const onTeam = !$("#team-view").hidden;
+  if (team) {
+    if (!onTeam) boardScroll = window.scrollY;
+    renderTeam(team);
+    document.title = `${team.name} · ${config.leagueName}`;
+  } else {
+    document.title = config.leagueName;
+  }
+  $("#board-view").hidden = !!team;
+  $("#team-view").hidden = !team;
+  window.scrollTo(0, team ? 0 : boardScroll);
+}
+
 async function init() {
   document.title = config.leagueName;
 
@@ -187,12 +258,14 @@ async function init() {
   $("#show-heat").checked = showHeat;
   $("#show-heat").addEventListener("change", (e) => { showHeat = e.target.checked; writePref("heatmap", showHeat); render(); });
 
+  window.addEventListener("hashchange", route);
   if (!weeks.length) {
     $("#board").innerHTML = `<p class="empty">No weeks found in the sheet yet.</p>`;
-    return;
+    return route();
   }
   selectWeek(weeks.at(-1));
   tabs.scrollLeft = tabs.scrollWidth; // latest week in view when there are many
+  route();
 }
 
 init();

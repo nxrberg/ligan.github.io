@@ -148,3 +148,60 @@ tbody tr:hover td { background-color: var(--head); }
   .board th.score { width: 6.5em; }
   .board td.lead::before { content: "★ "; color: var(--lead); font-size: 11px; }
 }
+
+/* Team names on the leaderboard open the team's page */
+.board .team-link { color: inherit; text-decoration: none; display: block; }
+.board .team-link:hover strong { color: var(--accent); }
+@media (min-width: 760px) { .board .team-link { display: inline; } }
+
+/* Team page */
+.team-view h2 { text-align: left; }
+.back {
+  display: inline-block; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none; padding: 4px 0;
+}
+.back:hover { color: var(--accent); }
+.hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 12px 0 24px; }
+.hero-logo {
+  width: 76px; height: 76px; border-radius: 16px; overflow: hidden; background: var(--chip);
+  display: grid; place-items: center; font-weight: 700; font-size: 18px; color: var(--muted);
+  border: 1px solid var(--line);
+}
+.hero-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero h1 { margin: 14px 0 4px; font-size: 18px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.hero-meta { margin: 0; color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* 3 Stars: cards side by side; on phones they scroll sideways and snap */
+.star-cards {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 80%; gap: 10px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  margin: 0 -6px; padding: 0 6px 4px; scroll-padding: 0 6px;
+}
+.star-cards::-webkit-scrollbar { display: none; }
+.star-card {
+  scroll-snap-align: start; border: 1px solid var(--line); border-radius: 12px; padding: 12px;
+  background: var(--panel); min-width: 0;
+}
+.star-card:first-child { background: var(--head); }
+.star-rank { margin: 0; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.star-icons { color: var(--lead); margin-right: 6px; letter-spacing: 0; }
+.star-card h3 { margin: 6px 0 2px; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.star-meta { margin: 0 0 12px; color: var(--muted); font-size: 10.5px; }
+.star-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin: 0; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.star-stats div { background: var(--panel); padding: 6px 0; text-align: center; }
+.star-stats dt { font-size: 9px; color: var(--muted); letter-spacing: 0.04em; }
+.star-stats dd { margin: 2px 0 0; font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.star-stats .key { background: color-mix(in srgb, var(--accent) 22%, var(--panel)); }
+.star-stats .key dd { font-weight: 700; }
+@media (min-width: 480px) {
+  .star-cards { margin: 0; padding: 0 0 4px; scroll-padding: 0; grid-auto-columns: minmax(240px, 1fr); }
+}
+@media (min-width: 760px) {
+  .star-cards { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); overflow: visible; }
+  .star-card { padding: 16px; }
+  .star-card h3 { font-size: 16px; }
+  .star-stats dt { font-size: 10px; }
+  .star-stats dd { font-size: 14px; }
+  .hero-logo { width: 90px; height: 90px; }
+  .hero h1 { font-size: 22px; }
+}

@@ -26,6 +26,9 @@
 /* Phones get the whole page at 125%, like Safari's page zoom two steps up. */
 @media (max-width: 759px) { html { zoom: 1.25; } }
 @media (max-width: 379px) { html { zoom: 1.15; } } /* the smallest phones need the room */
+/* SV% values are the widest, so they stay at their unzoomed size on phones. */
+@media (max-width: 759px) { .board td.pct { font-size: 0.8em; } .board td.pct .inf { font-size: 1.25em; } }
+@media (max-width: 379px) { .board td.pct { font-size: 0.87em; } }
 body {
   margin: 0;
   -webkit-text-size-adjust: 100%;

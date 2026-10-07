@@ -73,7 +73,7 @@ function cellHtml(cell, maxPerCat) {
   const tip = c.scored
     ? `${fmtValue(r.values[c.key], c)} · ${rk ? `rank ${rk.rank}` : "no rank"} · ${p} pts`
     : "";
-  const classes = ["num cat", heat == null ? "" : "heat", c.scored ? "" : "unscored", lead ? "lead" : ""].filter(Boolean).join(" ");
+  const classes = ["num cat", c.format === "pct" ? "pct" : "", heat == null ? "" : "heat", c.scored ? "" : "unscored", lead ? "lead" : ""].filter(Boolean).join(" ");
   return `<td class="${classes}"${style} title="${esc(tip)}">${text}</td>`;
 }
 

@@ -105,6 +105,7 @@ tbody tr:hover td { background-color: var(--head); }
 .board td.heat { --heat-c: color-mix(in srgb, var(--accent) calc(var(--heat) * 0.4), transparent); background-image: linear-gradient(var(--heat-c), var(--heat-c)); }
 .board .unscored { color: var(--muted); }
 .board td.lead { font-weight: 700; }
+.board .inf { font-weight: 400; }
 .board th.sortable { cursor: pointer; user-select: none; }
 .board th.sortable:hover, .board th.sorted { color: var(--text); }
 .board .sort-dir { font-size: 0.8em; margin-left: 1px; color: var(--accent); }

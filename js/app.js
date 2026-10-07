@@ -66,7 +66,10 @@ function cellHtml(cell, maxPerCat) {
   const style = heat == null ? "" : ` style="--heat:${Math.round(heat * 100)}%"`;
   const rk = r.ranks[c.key];
   const lead = c.scored && rk?.rank === 1;
-  const text = showRank && c.scored ? (rk ? rk.rank : "–") : fmtValue(r.values[c.key], c);
+  const v = r.values[c.key];
+  // A perfect SV% shows as a regular-weight ∞ instead of 1.00.
+  const text = showRank && c.scored ? (rk ? rk.rank : "–")
+    : c.format === "pct" && v >= 1 ? `<span class="inf">∞</span>` : fmtValue(v, c);
   const tip = c.scored
     ? `${fmtValue(r.values[c.key], c)} · ${rk ? `rank ${rk.rank}` : "no rank"} · ${p} pts`
     : "";

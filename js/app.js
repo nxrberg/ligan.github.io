@@ -45,12 +45,16 @@ function headerHtml(h) {
   const opens = cat ? allCats.filter((o) => o.toggledBy === cat.key) : [];
   const tip = cat?.dropped ? `Not scored: missing for ${cat.missing.join(", ")}`
     : cat && !cat.scored ? "Not counted in Score" : `Sort by ${label}`;
-  const classes = [cls, "sortable", sorted ? "sorted" : "", cat && !cat.scored ? "unscored" : ""].filter(Boolean).join(" ");
+  const canSort = h.column.getCanSort();
+  const classes = [cls, canSort ? "sortable" : "toggles", sorted ? "sorted" : "", cat && !cat.scored ? "unscored" : ""].filter(Boolean).join(" ");
   const toggle = opens.length
     ? `<button class="col-toggle" data-toggle="${cat.key}" title="${expanded.has(cat.key) ? "Hide" : "Show"} ${opens.map((o) => o.label).join(" and ")}">${expanded.has(cat.key) ? "▾" : "▸"}</button>`
     : "";
   const arrow = sorted ? `<span class="sort-dir">${sorted === "desc" ? "▼" : "▲"}</span>` : "";
-  return `<th class="${classes}" data-col="${h.column.id}" title="${esc(tip)}">${esc(label)}${arrow}${toggle}</th>`;
+  // A header that opens other columns (SV%) only toggles them; it doesn't sort.
+  const attrs = canSort ? `data-col="${h.column.id}"` : `data-toggle="${cat.key}"`;
+  const title = canSort ? tip : `${expanded.has(cat.key) ? "Hide" : "Show"} ${opens.map((o) => o.label).join(" and ")}`;
+  return `<th class="${classes}" ${attrs} title="${esc(title)}">${esc(label)}${arrow}${toggle}</th>`;
 }
 
 function cellHtml(cell, maxPerCat) {
@@ -84,7 +88,9 @@ function columnsFor(cats) {
     col("rank", "#", (r) => r.rank, { sortDescFirst: false, meta: { cls: "num col-rank" } }),
     col("team", "Team", (r) => r.name, { sortDescFirst: false, sortingFn: "text", meta: { cls: "team" } }),
     ...cats.map((c) =>
-      col(c.key, c.label, (r) => r.values[c.key] ?? undefined, { sortDescFirst: !c.lowerIsBetter, sortingFn: "basic", meta: { cat: c, cls: "num cat" } })
+      col(c.key, c.label, (r) => r.values[c.key] ?? undefined, {
+        sortDescFirst: !c.lowerIsBetter, sortingFn: "basic", enableSorting: !cats.some((o) => o.toggledBy === c.key), meta: { cat: c, cls: "num cat" },
+      })
     ),
     col("score", "Score", (r) => r.score, { sortDescFirst: true, meta: { cls: "num score" } }),
   ];

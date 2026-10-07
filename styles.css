@@ -109,8 +109,8 @@ tbody tr:hover td { background-color: var(--head); }
 .board .unscored { color: var(--muted); }
 .board td.lead { font-weight: 700; }
 .board .inf { font-weight: 400; }
-.board th.sortable { cursor: pointer; user-select: none; }
-.board th.sortable:hover, .board th.sorted { color: var(--text); }
+.board th.sortable, .board th.toggles { cursor: pointer; user-select: none; }
+.board th.sortable:hover, .board th.toggles:hover, .board th.sorted { color: var(--text); }
 .board .sort-dir { font-size: 0.8em; margin-left: 1px; color: var(--accent); }
 .board .col-toggle {
   border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer;

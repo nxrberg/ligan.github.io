@@ -33,7 +33,6 @@ export const config = {
   // Scoring categories, in display order. `key` is the stat's name after parsing (see data.js).
   // scored: false shows the column without counting it toward Score.
   // lowerIsBetter: true flips the comparison (e.g. GAA).
-  // noValueLoses: true keeps scoring the category when a team has no value; that team gets 0.
   // toggledBy: hidden until you click the header of that category (SV and SA open from SV%).
   categories: [
     { key: "g", label: "G" },
@@ -46,7 +45,7 @@ export const config = {
     { key: "w", label: "W" },
     { key: "sv", label: "SV", scored: false, toggledBy: "svp" },
     { key: "sa", label: "SA", scored: false, toggledBy: "svp" },
-    { key: "svp", label: "SV%", format: "pct", noValueLoses: true },
+    { key: "svp", label: "SV%", format: "pct" },
     { key: "sho", label: "SHO" },
   ],
 

@@ -7,12 +7,12 @@ export const weeksOf = (teams) =>
 
 export const ALL = "All";
 
-// One team's stat line over every week: counting stats are summed, SV% is recomputed from the
-// summed SV/SA. A stat missing in any of the team's weeks is missing in the total too.
+// One team's stat line over every week: counting stats are summed over the weeks that have a
+// value (missing only if no week has one), SV% is recomputed from the summed SV/SA.
 function allWeeksLine(team) {
   const ws = Object.values(team.weeks);
   if (!ws.length) return null;
-  const sum = (k) => ws.reduce((acc, w) => (acc == null || w.stats[k] == null ? null : acc + w.stats[k]), 0);
+  const sum = (k) => ws.reduce((acc, w) => (w.stats[k] == null ? acc : (acc ?? 0) + w.stats[k]), null);
   const stats = {};
   for (const c of config.categories) if (c.key !== "svp") stats[c.key] = sum(c.key);
   stats.svp = stats.sv != null && stats.sa ? stats.sv / stats.sa : null;
@@ -20,18 +20,11 @@ function allWeeksLine(team) {
 }
 
 // Score = for every scored category, pointsWin per team you beat and pointsTie per team you tie.
-// A category is left out of Score when any team is missing it, so nobody gets points for a gap.
-// Exception: `noValueLoses` categories (SV% with no shots faced) still count; the team without
-// a value beats and ties nobody.
+// Every scored category always counts: a team with a value beats a team without one, and two
+// teams without a value tie (Jakob, 2026-10-07).
 export function weeklyBoard(teams, week) {
   const lines = teams.map((t) => ({ name: t.name, logo: t.logo, line: week === ALL ? allWeeksLine(t) : t.weeks[week] || null }));
-  const cats = config.categories.map((c) => {
-    const missing = lines
-      .filter((l) => !l.line || (l.line.stats[c.key] == null && !c.noValueLoses))
-      .map((l) => l.name);
-    const counts = c.scored !== false;
-    return { ...c, scored: counts && missing.length === 0, dropped: counts && missing.length > 0, missing };
-  });
+  const cats = config.categories.map((c) => ({ ...c, scored: c.scored !== false }));
 
   const rows = lines.map(({ name, logo, line }) => ({
     name,
@@ -52,8 +45,8 @@ export function weeklyBoard(teams, week) {
       for (const o of rows) {
         if (o === r) continue;
         const theirs = o.values[c.key];
-        if (mine == null) continue;
-        if (theirs == null || better(mine, theirs)) p += config.pointsWin;
+        if (mine == null) p += theirs == null ? config.pointsTie : 0;
+        else if (theirs == null || better(mine, theirs)) p += config.pointsWin;
         else if (mine === theirs) p += config.pointsTie;
       }
       r.points[c.key] = p;

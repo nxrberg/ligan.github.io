@@ -49,8 +49,7 @@ function headerHtml(h) {
   const { cat, cls = "", label } = h.column.columnDef.meta;
   const sorted = h.column.getIsSorted();
   const opens = cat ? allCats.filter((o) => o.toggledBy === cat.key) : [];
-  const tip = cat?.dropped ? `Not scored: missing for ${cat.missing.join(", ")}`
-    : cat && !cat.scored ? "Not counted in Score" : `Sort by ${label}`;
+  const tip = cat && !cat.scored ? "Not counted in Score" : `Sort by ${label}`;
   const canSort = h.column.getCanSort();
   const classes = [cls, canSort ? "sortable" : "toggles", sorted ? "sorted" : "", cat && !cat.scored ? "unscored" : ""].filter(Boolean).join(" ");
   const toggle = opens.length
@@ -147,13 +146,10 @@ function render() {
     if (th) table.getColumn(th.dataset.col).toggleSorting();
   });
 
-  const dropped = board.cats.filter((c) => c.dropped);
   const fetched = rows.map((r) => r.line?.fetched).filter(Boolean).sort().at(-1);
   const info = [
     `Each category gives ${config.pointsWin} points for every team you beat and ${config.pointsTie} for every tie (max ${maxPerCat} per category, ${maxScore} total).`,
-    dropped.length
-      ? `Not counted in Score ${week === ALL ? "for all weeks" : "this week"}: ${dropped.map((c) => `${esc(c.label)} (missing for ${esc(c.missing.join(", "))})`).join("; ")}.`
-      : "",
+    "A team with a value in a category beats a team without one, and two teams without a value tie.",
   ].filter(Boolean);
   $("#notes").innerHTML = `${fetched ? `<p>Data fetched ${esc(fetched)}.</p>` : ""}
     <details${infoOpen ? " open" : ""}><summary>More information</summary>${info.map((n) => `<p>${n}</p>`).join("")}</details>`;

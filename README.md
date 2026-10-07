@@ -10,11 +10,11 @@ Team logos come from the sheet's **Teams** tab (Id, Team, Logo, Updated, written
 
 The table is built for phones first: on narrow screens it uses smaller type, shows each team's short name (`abbr` in `js/config.js`) and hides the overall # column so all 10 scored categories fit without scrolling. Full names and the # column come back on wider screens.
 
-Pick a week from the tabs above the table. The **All** tab adds up every week (SV% from the summed SV/SA) and scores those totals the same way; a stat missing in any of a team's weeks is missing from its total.
+Pick a week from the tabs above the table. The **All** tab adds up every week (SV% from the summed SV/SA) and scores those totals the same way; a team's total sums the weeks that have a value.
 
 The table is rendered with [TanStack Table](https://tanstack.com/table) (`@tanstack/table-core`, MIT), loaded as a pinned version from the jsDelivr CDN, so there's still no build step.
 
-Categories, points per win/tie, and which categories count are set in `js/config.js`. A category is left out of Score for everyone if any team is missing it that week.
+Categories, points per win/tie, and which categories count are set in `js/config.js`. Every scored category always counts: a team with a value beats a team without one, and two teams without a value tie.
 
 ## Data notes
 
@@ -22,7 +22,7 @@ Categories, points per win/tie, and which categories count are set in `js/config
 - GP can be blank (the matchup-page export has no GP column); the site doesn't need it.
 - One bad export (2026-10-05 22:57) wrote every stat one column to the right. The site spots those fetches (the goalie totals' SHO holds a fraction) and shifts the values back, but the last column (SOG, SHO) is lost in them. Re-exporting the week replaces them.
 - SV% is recomputed from SV / SA.
-- Yahoo shows "-" for a category with no stats yet. The site reads that as 0, except SV%, where it means no value; a team with no SV% gets 0 points in that category while it still counts for everyone else.
+- Yahoo shows "-" for a category with no stats yet. The site reads that as 0, except SV%, where it means no value; a team with no SV% loses to every team that has one and ties the others without one.
 - After every export the Pi (`write_sheet.py`) uploads all tabs as `league.json` to the `data` branch of this repo, and the site reads that file (`liveDataUrl` in `js/config.js`) on each page load, so new data shows up within a few minutes without a deploy. If it can't be read, the site uses the copy from the last deploy.
 - The browser never reads the sheet itself. The deploy bakes the latest uploaded file into `data/league.json` as a fallback; without it the site shows `data/sample.json`. `scripts/fetch-data.mjs` can still build that file straight from the sheet for local use.
 

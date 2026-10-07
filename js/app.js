@@ -10,7 +10,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 let data;
 let week;
 let showRank = false;
-let sorting = [{ id: "team", desc: true }]; // click a column header to sort by it
+let sorting = [{ id: "score", desc: true }]; // click a column header to sort by it
 let showHeat = readPref("heatmap", true);
 let infoOpen = false; // "More information" under the table stays open across re-renders
 const expanded = new Set(); // categories whose `toggledBy` columns are showing
@@ -58,7 +58,8 @@ function cellHtml(cell, maxPerCat) {
   const { cat: c, cls = "" } = cell.column.columnDef.meta;
   if (cell.column.id === "rank") return `<td class="${cls}">${r.rank}</td>`;
   if (cell.column.id === "team")
-    return `<td class="${cls}" title="${esc(r.name)} · Score ${r.score}"><strong><span class="full">${esc(r.name)}</span><span class="abbr">${esc(abbrOf(r.name))}</span></strong><span class="team-score">${r.score}</span></td>`;
+    return `<td class="${cls}" title="${esc(r.name)}"><strong><span class="full">${esc(r.name)}</span><span class="abbr">${esc(abbrOf(r.name))}</span></strong></td>`;
+  if (cell.column.id === "score") return `<td class="${cls}"><strong>${r.score}</strong></td>`;
 
   const p = r.points[c.key];
   const heat = showHeat && c.scored && p != null ? p / maxPerCat : null;
@@ -78,11 +79,11 @@ function columnsFor(cats) {
   const col = (id, label, accessorFn, { meta, ...opts } = {}) => ({ id, accessorFn, sortUndefined: "last", ...opts, meta: { label, ...meta } });
   return [
     col("rank", "#", (r) => r.rank, { sortDescFirst: false, meta: { cls: "num col-rank" } }),
-    // The Team column shows each team's Score under its name and sorts by it.
-    col("team", "Team", (r) => r.score, { sortDescFirst: true, sortingFn: "basic", meta: { cls: "team" } }),
+    col("team", "Team", (r) => r.name, { sortDescFirst: false, sortingFn: "text", meta: { cls: "team" } }),
     ...cats.map((c) =>
       col(c.key, c.label, (r) => r.values[c.key] ?? undefined, { sortDescFirst: !c.lowerIsBetter, sortingFn: "basic", meta: { cat: c, cls: "num cat" } })
     ),
+    col("score", "Score", (r) => r.score, { sortDescFirst: true, meta: { cls: "num score" } }),
   ];
 }
 
@@ -119,7 +120,7 @@ function render() {
     .map((row) => `<tr>${row.getVisibleCells().map((cell) => cellHtml(cell, maxPerCat)).join("")}</tr>`)
     .join("");
 
-  $("#board").innerHTML = `<div class="table-wrap"><table class="board${week === ALL ? " totals" : ""}"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  $("#board").innerHTML = `<div class="table-wrap"><table class="board${week === ALL ? " totals" : ""}${expanded.size ? " wide" : ""}"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
   $("#board").querySelector("thead").addEventListener("click", (e) => {
     const t = e.target.closest("[data-toggle]");
     if (t) {

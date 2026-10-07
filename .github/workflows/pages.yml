@@ -1,7 +1,7 @@
 name: Deploy site
 
-# Fetches the sheet via Sheety and publishes the site to GitHub Pages.
-# A fetch costs one Sheety request per team, so only scheduled and manual runs fetch.
+# Fetches the sheet (Google Sheets API, or Sheety as a fallback) and publishes the site to GitHub Pages.
+# Only scheduled and manual runs fetch; code pushes reuse the live data.
 on:
   push:
     branches: [main]
@@ -49,16 +49,24 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # Code pushes reuse the data already live on the site, so they cost no Sheety quota.
-      # Scheduled and manual runs fetch fresh data, and fall back to the live copy if Sheety fails.
+      # Code pushes reuse the data already live on the site. Scheduled and manual runs fetch fresh
+      # data (Google Sheets API if its secrets are set, else Sheety) and fall back to the live copy
+      # if that fails, with a warning on the run so a stale site doesn't go unnoticed.
       - name: Get league data
         run: |
-          if [ "$EVENT" != "push" ] && node scripts/fetch-data.mjs data/league.json; then exit 0; fi
-          echo "Reusing the data from the live site"
+          if [ "$EVENT" = "push" ]; then
+            echo "Code push: reusing the data from the live site"
+          elif node scripts/fetch-data.mjs data/league.json; then
+            exit 0
+          else
+            echo "::warning title=Data not refreshed::Fetching the sheet failed (see the log above); the site keeps its previous data."
+          fi
           curl -fsSL "$LIVE_DATA" -o data/league.json
         env:
           EVENT: ${{ github.event_name }}
           LIVE_DATA: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/league.json
+          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
           SHEETY_BASE: ${{ secrets.SHEETY_BASE }}
           SHEETY_TOKEN: ${{ secrets.SHEETY_TOKEN }}
       - uses: actions/upload-pages-artifact@v3

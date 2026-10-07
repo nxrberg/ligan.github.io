@@ -1,12 +1,12 @@
 # Ligan V2
 
-Leaderboard and stats site for our Yahoo fantasy hockey league. Plain HTML/CSS/JS, no build step. Data comes from the `yhExport` Google Sheet via [Sheety](https://sheety.co), one tab per team.
+Leaderboard and stats site for our Yahoo fantasy hockey league. Plain HTML/CSS/JS, no build step. Data comes from the `yhExport` Google Sheet, one tab per team, read with the Google Sheets API (or through [Sheety](https://sheety.co) as a fallback).
 
 ## Weekly leaderboard
 
 Shows every team's category totals for the selected week plus a **Score** column on the far right. In each scored category a team gets 2 points for every other team it beats and 1 point for every tie (max 22 per category with 12 teams). Score is the sum over all scored categories. Cells are shaded by how many points they earned; tick "Cats rank" to see each team's rank in every category instead of the stats (tied teams share a rank). SV and SA don't count toward Score and are hidden; click the SV% header to show or hide them (SV% itself doesn't sort). Click any other column header to sort by it (click again to flip the order). Each category's leader (or leaders, when tied) is shown in bold, with a ★ on wider screens. The "Heatmap" toggle turns the shading off and on, and the browser remembers the choice.
 
-Team logos come from the sheet's **Teams** tab (Id, Team, Logo, Updated, written by the export; Sheety endpoint `teams`). A team without a logo, or whose logo fails to load, shows its short name instead.
+Team logos come from the sheet's **Teams** tab (Id, Team, Logo, Updated, written by the export). A team without a logo, or whose logo fails to load, shows its short name instead.
 
 The table is built for phones first: on narrow screens it uses smaller type, shows each team's short name (`abbr` in `js/config.js`) and hides the overall # column so all 10 scored categories fit without scrolling. Full names and the # column come back on wider screens.
 
@@ -23,12 +23,12 @@ Categories, points per win/tie, and which categories count are set in `js/config
 - One bad export (2026-10-05 22:57) wrote every stat one column to the right. The site spots those fetches (the goalie totals' SHO holds a fraction) and shifts the values back, but the last column (SOG, SHO) is lost in them. Re-exporting the week replaces them.
 - SV% is recomputed from SV / SA.
 - Yahoo shows "-" for a category with no stats yet. The site reads that as 0, except SV%, where it means no value; a team with no SV% gets 0 points in that category while it still counts for everyone else.
-- The browser never calls Sheety. `scripts/fetch-data.mjs` pulls every team tab into `data/league.json`, and the deploy job runs it, so the Sheety URL stays in a repository secret and visitors don't spend Sheety quota. Without `data/league.json` the site shows `data/sample.json`.
+- The browser never reads the sheet. `scripts/fetch-data.mjs` pulls every tab into `data/league.json`, and the deploy job runs it, so the credentials stay in repository secrets. Without `data/league.json` the site shows `data/sample.json`.
 
 ## Run locally
 
 ```sh
-SHEETY_BASE=https://api.sheety.co/<id>/yhExport node scripts/fetch-data.mjs   # optional: real data
+GOOGLE_SERVICE_ACCOUNT="$(cat key.json)" GOOGLE_SHEET_ID=<id> node scripts/fetch-data.mjs   # optional: real data
 python3 -m http.server 8000
 ```
 
@@ -36,9 +36,9 @@ Then open http://localhost:8000. (Opening `index.html` directly won't work becau
 
 ## Deploy
 
-`.github/workflows/pages.yml` publishes to GitHub Pages on every push to `main`, once a day at 10:10 Swedish time (10 minutes after the Pi updates the sheet), and on demand (Actions → Deploy site → Run workflow). Only the daily and on-demand runs fetch from Sheety (one request per team, 12 per run); a push reuses the `data/league.json` already on the live site, and so does a fetch that fails.
+`.github/workflows/pages.yml` publishes to GitHub Pages on every push to `main`, once a day at 10:10 Swedish time (10 minutes after the Pi updates the sheet), and on demand (Actions → Deploy site → Run workflow). Only the daily and on-demand runs fetch the sheet; a push reuses the `data/league.json` already on the live site. If a fetch fails the site keeps its previous data and the run shows a "Data not refreshed" warning.
 
 One-time setup in the GitHub repo:
 1. Settings → Pages → Source: **GitHub Actions**.
-2. Settings → Secrets and variables → Actions → add `SHEETY_BASE` = `https://api.sheety.co/<id>/yhExport` (and `SHEETY_TOKEN` if Sheety auth is on).
-3. In Sheety, turn off POST, PUT and DELETE for the project so the sheet stays read-only.
+2. Settings → Secrets and variables → Actions → add `GOOGLE_SERVICE_ACCOUNT` (the whole JSON key file of a Google service account that can view the sheet) and `GOOGLE_SHEET_ID` (the long id in the sheet's URL). The script only asks Google for read-only access.
+3. Optional fallback: `SHEETY_BASE` = `https://api.sheety.co/<id>/yhExport` (and `SHEETY_TOKEN` if Sheety auth is on), with POST, PUT and DELETE turned off in Sheety. Sheety's plan limits how many requests a month it answers (it returns 402 when they run out).

@@ -1,16 +1,11 @@
 name: Deploy site
 
-# Fetches the sheet (Google Sheets API, or Sheety as a fallback) and publishes the site to GitHub Pages.
-# Only scheduled and manual runs fetch; code pushes reuse the live data.
+# Publishes the site to GitHub Pages on code pushes and on demand. Data doesn't need a deploy:
+# the Pi uploads league.json to the `data` branch after every export and the site reads it on
+# page load. The deploy only bakes a copy of that file in as a fallback.
 on:
   push:
     branches: [main]
-  # Daily at 10:10 Swedish time, 10 minutes after the Pi updates the sheet. Cron runs in UTC,
-  # so both candidates are scheduled and the gate job keeps the one that is 10:10 in Stockholm
-  # (08:10 UTC in summer time, 09:10 UTC in winter time).
-  schedule:
-    - cron: "10 8 * * *"
-    - cron: "10 9 * * *"
   workflow_dispatch:
 
 permissions:
@@ -23,52 +18,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  gate:
-    runs-on: ubuntu-latest
-    outputs:
-      run: ${{ steps.check.outputs.run }}
-    steps:
-      - id: check
-        env:
-          EVENT: ${{ github.event_name }}
-          SCHEDULE: ${{ github.event.schedule }}
-        run: |
-          if [ "$EVENT" != "schedule" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          if [ "$(TZ=Europe/Stockholm date +%z)" = "+0200" ]; then want="10 8 * * *"; else want="10 9 * * *"; fi
-          if [ "$SCHEDULE" = "$want" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
-
   deploy:
-    needs: gate
-    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      # Code pushes reuse the data already live on the site. Scheduled and manual runs fetch fresh
-      # data (Google Sheets API if its secrets are set, else Sheety) and fall back to the live copy
-      # if that fails, with a warning on the run so a stale site doesn't go unnoticed.
-      - name: Get league data
+      # Fallback copy of the data: the Pi's latest upload, else whatever the live site has now.
+      - name: Get fallback data
         run: |
-          if [ "$EVENT" = "push" ]; then
-            echo "Code push: reusing the data from the live site"
-          elif node scripts/fetch-data.mjs data/league.json; then
-            exit 0
-          else
-            echo "::warning title=Data not refreshed::Fetching the sheet failed (see the log above); the site keeps its previous data."
-          fi
+          git fetch --depth=1 origin data && git show FETCH_HEAD:league.json > data/league.json && exit 0
+          echo "::warning title=No data branch file::Using the data from the live site instead."
           curl -fsSL "$LIVE_DATA" -o data/league.json
         env:
-          EVENT: ${{ github.event_name }}
           LIVE_DATA: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/league.json
-          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
-          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
-          SHEETY_BASE: ${{ secrets.SHEETY_BASE }}
-          SHEETY_TOKEN: ${{ secrets.SHEETY_TOKEN }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .

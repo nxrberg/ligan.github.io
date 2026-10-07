@@ -6,6 +6,8 @@ Leaderboard and stats site for our Yahoo fantasy hockey league. Plain HTML/CSS/J
 
 Shows every team's category totals for the selected week plus a **Score** column on the far right. In each scored category a team gets 2 points for every other team it beats and 1 point for every tie (max 22 per category with 12 teams). Score is the sum over all scored categories. Cells are shaded by how many points they earned; tick "Cats rank" to see each team's rank in every category instead of the stats (tied teams share a rank). SV and SA don't count toward Score and are hidden; click the SV% header to show or hide them (SV% itself doesn't sort). Click any other column header to sort by it (click again to flip the order). Each category's leader (or leaders, when tied) is shown in bold, with a ★ on wider screens. The "Heatmap" toggle turns the shading off and on, and the browser remembers the choice.
 
+Team logos come from the sheet's **Teams** tab (Id, Team, Logo, Updated, written by the export; Sheety endpoint `teams`). A team without a logo, or whose logo fails to load, shows its short name instead.
+
 The table is built for phones first: on narrow screens it uses smaller type, shows each team's short name (`abbr` in `js/config.js`) and hides the overall # column so all 10 scored categories fit without scrolling. Full names and the # column come back on wider screens.
 
 Pick a week from the tabs above the table. The **All** tab adds up every week (SV% from the summed SV/SA) and scores those totals the same way; a stat missing in any of a team's weeks is missing from its total.

@@ -5,6 +5,9 @@ export const config = {
 
   dataUrl: "data/league.json",
 
+  // Sheety endpoint for the Teams tab (Id, Team, Logo, Updated) that the export writes; gives each team's logo.
+  teamsSheet: "teams",
+
   // `sheet` is the Sheety endpoint name for the team's tab (it gets URL-encoded, so "#10" and "q's" are fine).
   // `abbr` is the short name shown on narrow screens.
   teams: [

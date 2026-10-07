@@ -24,7 +24,7 @@ function allWeeksLine(team) {
 // Exception: `noValueLoses` categories (SV% with no shots faced) still count; the team without
 // a value beats and ties nobody.
 export function weeklyBoard(teams, week) {
-  const lines = teams.map((t) => ({ name: t.name, line: week === ALL ? allWeeksLine(t) : t.weeks[week] || null }));
+  const lines = teams.map((t) => ({ name: t.name, logo: t.logo, line: week === ALL ? allWeeksLine(t) : t.weeks[week] || null }));
   const cats = config.categories.map((c) => {
     const missing = lines
       .filter((l) => !l.line || (l.line.stats[c.key] == null && !c.noValueLoses))
@@ -33,8 +33,9 @@ export function weeklyBoard(teams, week) {
     return { ...c, scored: counts && missing.length === 0, dropped: counts && missing.length > 0, missing };
   });
 
-  const rows = lines.map(({ name, line }) => ({
+  const rows = lines.map(({ name, logo, line }) => ({
     name,
+    logo,
     line,
     values: Object.fromEntries(cats.map((c) => [c.key, line?.stats[c.key] ?? null])),
     points: {},

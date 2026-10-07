@@ -33,6 +33,12 @@ function abbrOf(name) {
   return abbrs.get(name) || name.replace(/[^\p{L}\p{N}#']/gu, "").slice(0, 3).toUpperCase();
 }
 
+// Team logo from the Teams tab; if it fails to load, the cell falls back to the abbreviation.
+function logoHtml(r) {
+  if (!r.logo) return "";
+  return `<img class="logo" src="${esc(r.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('has-logo');this.remove()">`;
+}
+
 function fmtValue(v, cat) {
   if (v == null) return "–";
   if (cat.format === "pct") return v >= 1 ? "1.00" : v.toFixed(3).replace(/^0/, "");
@@ -62,7 +68,7 @@ function cellHtml(cell, maxPerCat) {
   const { cat: c, cls = "" } = cell.column.columnDef.meta;
   if (cell.column.id === "rank") return `<td class="${cls}">${r.rank}</td>`;
   if (cell.column.id === "team")
-    return `<td class="${cls}" title="${esc(r.name)}"><strong><span class="full">${esc(r.name)}</span><span class="abbr">${esc(abbrOf(r.name))}</span></strong></td>`;
+    return `<td class="${cls}${r.logo ? " has-logo" : ""}" title="${esc(r.name)}">${logoHtml(r)}<strong><span class="full">${esc(r.name)}</span><span class="abbr">${esc(abbrOf(r.name))}</span></strong></td>`;
   if (cell.column.id === "score") return `<td class="${cls}"><strong>${r.score}</strong></td>`;
 
   const p = r.points[c.key];
@@ -129,7 +135,7 @@ function render() {
     .map((row) => `<tr>${row.getVisibleCells().map((cell) => cellHtml(cell, maxPerCat)).join("")}</tr>`)
     .join("");
 
-  $("#board").innerHTML = `<div class="table-wrap"><table class="board${week === ALL ? " totals" : ""}${expanded.size ? " wide" : ""}"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  $("#board").innerHTML = `<div class="table-wrap"><table class="board${week === ALL ? " totals" : ""}${expanded.size ? " wide" : ""}${rows.some((r) => r.logo) ? " logos" : ""}"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
   $("#board").querySelector("thead").addEventListener("click", (e) => {
     const t = e.target.closest("[data-toggle]");
     if (t) {

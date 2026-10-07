@@ -69,6 +69,19 @@ function parseTeam(rows) {
   return weeks;
 }
 
+// Team names compared loosely, so "Q's", "q's" and "qs" all match.
+const key = (s) => String(s ?? "").toLowerCase().replace(/[^\p{L}\p{N}#]/gu, "");
+
+// Teams tab rows -> Map of team key -> logo URL (only absolute https URLs are used).
+function logosOf(rows) {
+  const m = new Map();
+  for (const r of rows) {
+    const url = String(r.logo ?? "").trim();
+    if (r.team && /^https:\/\//.test(url)) m.set(key(r.team), url);
+  }
+  return m;
+}
+
 // data/league.json is written by scripts/fetch-data.mjs (the deploy job runs it).
 // Without it, e.g. when running locally, the site falls back to data/sample.json.
 export async function loadData() {
@@ -80,6 +93,11 @@ export async function loadData() {
   }
   if (!res.ok) throw new Error(`couldn't load ${config.dataUrl} (${res.status})`);
   const all = await res.json();
-  const teams = config.teams.map((t) => ({ ...t, weeks: parseTeam(rowsOf(all[t.sheet] || [])) }));
+  const logos = logosOf(rowsOf(all[config.teamsSheet] || []));
+  const teams = config.teams.map((t) => ({
+    ...t,
+    logo: logos.get(key(t.name)) || logos.get(key(t.sheet)) || null,
+    weeks: parseTeam(rowsOf(all[t.sheet] || [])),
+  }));
   return { source, teams };
 }

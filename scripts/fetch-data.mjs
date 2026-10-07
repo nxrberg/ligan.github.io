@@ -21,6 +21,12 @@ for (const t of config.teams) {
   out[t.sheet] = await res.json();
 }
 
+// The Teams tab (Id, Team, Logo, Updated) is optional: until the export writes it and it's
+// enabled in Sheety, the site shows abbreviations instead of logos.
+const teamsRes = await fetch(`${base}/${encodeURIComponent(config.teamsSheet)}`, { headers });
+if (teamsRes.ok) out[config.teamsSheet] = await teamsRes.json();
+else console.warn(`No ${config.teamsSheet} tab (Sheety returned ${teamsRes.status}); logos left out`);
+
 const file = process.argv[2] || "data/league.json";
 await writeFile(file, JSON.stringify(out));
 console.log(`Wrote ${config.teams.length} teams to ${file}`);

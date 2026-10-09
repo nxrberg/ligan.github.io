@@ -195,20 +195,21 @@ function categoryChart(board, row) {
     const mine = row.values[c.key];
     const rk = row.ranks[c.key];
     const tip = `${c.label}: ${mine == null ? "no value" : fmt(mine, c)}${rk ? ` · rank ${rk.rank} of ${vals.length}` : ""} · average ${fmt(avg, c)} · best ${fmt(best, c)}`;
-    return `<div class="cat-row" title="${esc(tip)}">
-        <span class="cat-label">${esc(c.label)}</span>
+    return `<div class="cat-col" title="${esc(tip)}">
+        <span class="cat-value">${mine == null ? "–" : fmt(mine, c)}</span>
+        <span class="cat-rank">${rk ? ordinal(rk.rank) : ""}</span>
         <span class="cat-track">
-          ${mine == null ? "" : `<span class="cat-bar${rk?.rank === 1 ? " lead" : ""}" style="width:${pos(mine, lo, best).toFixed(1)}%"></span>`}
-          <span class="cat-mark avg" style="left:${pos(avg, lo, best).toFixed(1)}%"></span>
-          <span class="cat-mark best" style="left:100%"></span>
+          ${mine == null ? "" : `<span class="cat-bar${rk?.rank === 1 ? " lead" : ""}" style="height:${pos(mine, lo, best).toFixed(1)}%"></span>`}
+          <span class="cat-mark avg" style="bottom:${pos(avg, lo, best).toFixed(1)}%"></span>
+          <span class="cat-mark best" style="bottom:100%"></span>
         </span>
-        <span class="cat-value">${mine == null ? "–" : fmt(mine, c)}${rk ? `<small>${ordinal(rk.rank)}</small>` : ""}</span>
+        <span class="cat-label">${esc(c.label)}</span>
       </div>`;
   }).join("");
   return `<section class="cat-chart">
       <h2>Categories</h2>
       <p class="cat-legend"><span><i class="key-bar"></i>${esc(abbrOf(row.name))}</span><span><i class="key-mark avg"></i>League average</span><span><i class="key-mark best"></i>League best</span></p>
-      <div class="cat-rows">${lines}</div>
+      <div class="cat-cols">${lines}</div>
       <div class="notes"><p>All weeks. Each bar runs from 0 to the league's best team in that category${board.cats.some((c) => c.format === "pct") ? "; SV% from the league's lowest" : ""}.</p></div>
     </section>`;
 }

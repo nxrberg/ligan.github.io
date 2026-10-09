@@ -178,8 +178,44 @@ function starCard(p, i) {
     </article>`;
 }
 
+// One bar per scoring category over all weeks, with the league average and the league best
+// as marks on the same track. Every category has its own scale: the track runs from 0 (or the
+// league's lowest value when that is negative) to the best team, so the best mark sits at the end.
+// SV% starts at the league's lowest instead, since every team is close to .900.
+function categoryChart(board, row) {
+  const pos = (v, lo, hi) => (hi > lo ? Math.max(0, Math.min(100, ((v - lo) / (hi - lo)) * 100)) : 100);
+  const fmt = (v, c) => (c.format === "pct" ? fmtValue(v, c) : Number.isInteger(v) ? String(v) : v.toFixed(1));
+  const lines = board.cats.filter((c) => c.scored).map((c) => {
+    const vals = board.rows.map((r) => r.values[c.key]).filter((v) => v != null);
+    if (!vals.length) return "";
+    const best = c.lowerIsBetter ? Math.min(...vals) : Math.max(...vals);
+    const worst = c.lowerIsBetter ? Math.max(...vals) : Math.min(...vals);
+    const avg = vals.reduce((a, v) => a + v, 0) / vals.length;
+    const lo = c.format === "pct" ? worst : Math.min(0, worst);
+    const mine = row.values[c.key];
+    const rk = row.ranks[c.key];
+    const tip = `${c.label}: ${mine == null ? "no value" : fmt(mine, c)}${rk ? ` · rank ${rk.rank} of ${vals.length}` : ""} · average ${fmt(avg, c)} · best ${fmt(best, c)}`;
+    return `<div class="cat-row" title="${esc(tip)}">
+        <span class="cat-label">${esc(c.label)}</span>
+        <span class="cat-track">
+          ${mine == null ? "" : `<span class="cat-bar${rk?.rank === 1 ? " lead" : ""}" style="width:${pos(mine, lo, best).toFixed(1)}%"></span>`}
+          <span class="cat-mark avg" style="left:${pos(avg, lo, best).toFixed(1)}%"></span>
+          <span class="cat-mark best" style="left:100%"></span>
+        </span>
+        <span class="cat-value">${mine == null ? "–" : fmt(mine, c)}${rk ? `<small>${ordinal(rk.rank)}</small>` : ""}</span>
+      </div>`;
+  }).join("");
+  return `<section class="cat-chart">
+      <h2>Categories</h2>
+      <p class="cat-legend"><span><i class="key-bar"></i>${esc(abbrOf(row.name))}</span><span><i class="key-mark avg"></i>League average</span><span><i class="key-mark best"></i>League best</span></p>
+      <div class="cat-rows">${lines}</div>
+      <div class="notes"><p>All weeks. Each bar runs from 0 to the league's best team in that category${board.cats.some((c) => c.format === "pct") ? "; SV% from the league's lowest" : ""}.</p></div>
+    </section>`;
+}
+
 function renderTeam(team) {
-  const season = weeklyBoard(data.teams, ALL).rows.find((r) => r.name === team.name);
+  const allBoard = weeklyBoard(data.teams, ALL);
+  const season = allBoard.rows.find((r) => r.name === team.name);
   const { players, weeksWithoutGp } = seasonSkaters(team);
   const stars = threeStars(players, MIN_GP);
   const counted = weeksOf([team]).filter((w) => !weeksWithoutGp.includes(w));
@@ -205,7 +241,8 @@ function renderTeam(team) {
         ? `<div class="star-cards">${stars.map(starCard).join("")}</div>`
         : `<p class="empty">No skater has ${MIN_GP} games played yet.</p>`}
       <div class="notes">${notes.map((n) => `<p>${n}</p>`).join("")}</div>
-    </section>`;
+    </section>
+    ${season ? categoryChart(allBoard, season) : ""}`;
 }
 
 // ---- Veckans guldgossar (#/guldgossar): the league's 10 best skaters ----

@@ -214,8 +214,6 @@ const TOP_PLAYERS = 10;
 const minGpFor = (w) => (w === ALL ? 3 : 2);
 // Per-game values kept short so they fit a phone: 0.42 -> .42, 1.50 -> 1.5, -0.33 -> -.33, 0.00 -> 0.
 const perGameShort = (v) => v.toFixed(2).replace(/\.?0+$/, "").replace(/^(-?)0\./, "$1.") || "0";
-// "Brady Tkachuk" -> "B. Tkachuk" for phones.
-const shortName = (n) => n.replace(/^(\S)\S*\s+(?=\S)/u, "$1. ");
 
 function renderPlayers() {
   const minGp = minGpFor(week);
@@ -227,7 +225,9 @@ function renderPlayers() {
   $("#players-title").textContent = title;
   document.title = `${title} · ${config.leagueName}`;
 
-  const head = `<tr><th class="num col-rank">#</th><th class="player">Player</th><th class="num gp">GP</th>${SKATER_CATS.map((c) => `<th class="num cat">${esc(c.label)}</th>`).join("")}<th class="num score">Score</th></tr>`;
+  // Each player is two rows in its own <tbody>: rank, owner's logo, name and NHL team on top,
+  // GP, the categories and Score underneath.
+  const head = `<tr><th class="num gp">GP</th>${SKATER_CATS.map((c) => `<th class="num cat">${esc(c.label)}</th>`).join("")}<th class="num score">Score</th></tr>`;
   const body = top.map((r) => {
     const cells = SKATER_CATS.map((c) => {
       const leads = rows.every((o) => o.perGp[c.key] <= r.perGp[c.key]);
@@ -236,14 +236,17 @@ function renderPlayers() {
       return `<td class="num cat${heat ? " heat" : ""}${leads ? " lead" : ""}"${heat} title="${esc(tip)}">${perGameShort(r.perGp[c.key])}</td>`;
     }).join("");
     const team = r.team;
-    const meta = [team ? abbrOf(team.name) : "", r.nhl].filter(Boolean).join(" · ");
-    return `<tr><td class="num col-rank">${r.rank}</td>
-      <td class="player" title="${esc(r.player)}${team ? ` · ${esc(team.name)}` : ""}"><strong><span class="full">${esc(r.player)}</span><span class="abbr">${esc(shortName(r.player))}</span></strong><span class="player-meta">${esc(meta)}</span></td>
-      <td class="num gp">${r.gp}</td>${cells}<td class="num score"><strong>${r.score}</strong></td></tr>`;
+    const owner = team
+      ? `<span class="owner${team.logo ? " has-logo" : ""}" title="${esc(team.name)}">${team.logo ? logoHtml(team) : ""}<span class="owner-abbr">${esc(abbrOf(team.name))}</span></span>`
+      : "";
+    return `<tbody class="player-block">
+      <tr class="name-row"><td colspan="${SKATER_CATS.length + 2}"><span class="player-rank">${r.rank}</span>${owner}<strong>${esc(r.player)}</strong><span class="player-meta">${esc(r.nhl || "")}</span></td></tr>
+      <tr class="stat-row"><td class="num gp">${r.gp}</td>${cells}<td class="num score"><strong>${r.score}</strong></td></tr>
+    </tbody>`;
   }).join("");
 
   $("#players").innerHTML = top.length
-    ? `<div class="table-wrap"><table class="board players"><thead>${head}</thead><tbody>${body}</tbody></table></div>`
+    ? `<div class="table-wrap"><table class="board players"><thead>${head}</thead>${body}</table></div>`
     : `<p class="empty">No skater has ${minGp} games played ${week === ALL ? "yet" : `in ${esc(week)}`}.</p>`;
 
   const info = [

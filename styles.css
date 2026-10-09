@@ -213,24 +213,34 @@ tbody tr:hover td { background-color: var(--head); }
 }
 .page-link:hover { text-decoration: underline; }
 
-/* Veckans guldgossar: the 10 best skaters, per-GP values in the leaderboard's table style */
+/* Veckans guldgossar: the 10 best skaters, per-GP values in the leaderboard's table style.
+   Each player is a <tbody> of two rows: name row (spans the table), then the stat row. */
 #players-view .week-tabs { margin-top: 4px; }
-.board.players th.player { width: 7.4em; }
-.board.players th.gp { width: 1.8em; }
+.board.players th.gp { width: 2.4em; }
 .board.players .gp { text-align: center; color: var(--muted); }
-.board.players td.player { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.board.players .player strong { display: block; overflow: hidden; text-overflow: ellipsis; }
-.board.players .player .full { display: none; }
-.board.players .player-meta { display: block; font-size: 0.85em; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.board.players th.score { width: 3.6em; }
 .board.players td.score { font-size: inherit; }
+.board.players .player-block tr td { background-color: transparent; }
+.board.players .player-block:nth-of-type(even) td { background-color: var(--zebra); }
+.board.players .player-block:hover td { background-color: var(--head); }
+.board.players .player-block:last-child .stat-row td { border-bottom: 0; }
+.board.players .name-row td { border-bottom: 0; padding: 9px 6px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.board.players .name-row td > * { vertical-align: middle; }
+.board.players .stat-row td { padding-top: 6px; }
+.board.players .player-rank { display: inline-block; min-width: 1.6em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.board.players .owner { display: inline-block; margin-right: 8px; }
+.board.players .owner .logo { display: block; width: 20px; height: 20px; }
+.board.players .owner.has-logo .owner-abbr { display: none; }
+.board.players .owner-abbr { font-size: 0.85em; font-weight: 600; color: var(--muted); }
+.board.players .name-row strong { font-size: 1.1em; }
+.board.players .player-meta { margin-left: 8px; font-size: 0.9em; color: var(--muted); }
 @media (min-width: 480px) {
-  .board.players th.player { width: 11em; }
-  .board.players th.gp { width: 3em; }
+  .board.players .name-row td { padding: 12px 8px 2px; }
+  .board.players .owner .logo { width: 24px; height: 24px; }
+  .board.players th.score { width: 5em; }
 }
 @media (min-width: 760px) {
-  .board.players .player .full { display: inline; }
-  .board.players .player .abbr { display: none; }
-  .board.players th.player { width: 15em; }
-  .board.players th.gp { width: 4em; }
+  .board.players .name-row td { padding: 14px 12px 2px; }
+  .board.players .owner .logo { width: 28px; height: 28px; margin: 0; }
   .board.players td.score { font-size: 15px; }
 }

@@ -302,7 +302,7 @@ function categoryChart(board, row, other) {
           </select>
         </label>
       </div>
-      <p class="cat-legend"><span><i class="key-bar"></i>${esc(abbrOf(row.name))}</span>${other ? `<span><i class="key-bar vs"></i>${esc(abbrOf(other.name))}</span>${winsPie(headToHead(board, row, other), row, other)}` : ""}<span><i class="key-mark avg"></i>League average</span><span><i class="key-mark best"></i>League best</span></p>
+      <p class="cat-legend"><span><i class="key-bar"></i>${esc(abbrOf(row.name))}</span>${other ? `<span><i class="key-bar vs"></i>${esc(abbrOf(other.name))}</span>${winsPie(headToHead(board, row, other), row, other)}<span class="break"></span>` : ""}<span><i class="key-mark avg"></i>League average</span><span><i class="key-mark best"></i>League best</span></p>
       <div class="cat-cols">${lines}</div>
       ${radarChart(board, row, other)}
       <div class="notes"><p>All weeks. Each bar runs from 0 to the league's best team in that category${board.cats.some((c) => c.format === "pct") ? "; SV% from the league's lowest" : ""}.</p></div>

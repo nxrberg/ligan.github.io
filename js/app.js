@@ -182,6 +182,59 @@ function starCard(p, i) {
 // as marks on the same track. Every category has its own scale: the track runs from 0 (or the
 // league's lowest value when that is negative) to the best team, so the best mark sits at the end.
 // SV% starts at the league's lowest instead, since every team is close to .900.
+// Spider chart of the same categories: each spoke runs from the category's low to the league best
+// (the gold outer ring), on the same scales as the bars. The dashed shape is the league average.
+function radarChart(board, row, other) {
+  const cats = board.cats.filter((c) => c.scored);
+  const stats = cats.map((c) => {
+    const vals = board.rows.map((r) => r.values[c.key]).filter((v) => v != null);
+    const best = c.lowerIsBetter ? Math.min(...vals) : Math.max(...vals);
+    const worst = c.lowerIsBetter ? Math.max(...vals) : Math.min(...vals);
+    const lo = c.format === "pct" ? worst : Math.min(0, worst);
+    return { c, best, lo, avg: vals.length ? vals.reduce((a, v) => a + v, 0) / vals.length : null };
+  });
+  const share = (v, s) => (v == null || s.best === s.lo ? (v == null ? 0 : 1) : Math.max(0, Math.min(1, (v - s.lo) / (s.best - s.lo))));
+  const R = 100, cx = 150, cy = 140;
+  const pt = (i, f) => {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / stats.length;
+    return [cx + Math.cos(a) * R * f, cy + Math.sin(a) * R * f];
+  };
+  const poly = (fs) => fs.map((f, i) => pt(i, f).map((n) => n.toFixed(1)).join(",")).join(" ");
+  const rings = [0.25, 0.5, 0.75].map((f) => `<polygon class="ring" points="${poly(stats.map(() => f))}"/>`).join("");
+  const spokes = stats.map((_, i) => { const [x, y] = pt(i, 1); return `<line class="spoke" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`; }).join("");
+  const labels = stats.map((s, i) => {
+    const [x, y] = pt(i, 1.17);
+    const anchor = Math.abs(x - cx) < 4 ? "middle" : x > cx ? "start" : "end";
+    return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${anchor}">${esc(s.c.label)}</text>`;
+  }).join("");
+  const shape = (r, cls) => `<polygon class="${cls}" points="${poly(stats.map((s) => share(r.values[s.c.key], s)))}"/>`;
+
+  // Who's stronger: categories won head to head, or against the league average when not comparing.
+  const better = (c, x, y) => (x == null ? false : y == null ? true : c.lowerIsBetter ? x < y : x > y);
+  let verdict;
+  if (other) {
+    const won = stats.filter((s) => better(s.c, row.values[s.c.key], other.values[s.c.key])).length;
+    const lost = stats.filter((s) => better(s.c, other.values[s.c.key], row.values[s.c.key])).length;
+    const tied = stats.length - won - lost;
+    const [a, b] = [abbrOf(row.name), abbrOf(other.name)];
+    const lead = won === lost ? "Even" : won > lost ? `${a} stronger` : `${b} stronger`;
+    verdict = `<strong>${esc(lead)}</strong>: ${esc(a)} wins ${won}, ${esc(b)} wins ${lost}${tied ? `, ${tied} tied` : ""}`;
+  } else {
+    const above = stats.filter((s) => better(s.c, row.values[s.c.key], s.avg)).length;
+    verdict = `Above the league average in <strong>${above} of ${stats.length}</strong> categories`;
+  }
+  return `<div class="radar">
+      <p class="radar-verdict">${verdict}</p>
+      <svg viewBox="0 0 300 280" role="img" aria-label="Spider chart of ${esc(row.name)}${other ? ` and ${esc(other.name)}` : ""} across the categories">
+        ${rings}${spokes}
+        <polygon class="ring best" points="${poly(stats.map(() => 1))}"/>
+        <polygon class="avg" points="${poly(stats.map((s) => share(s.avg, s)))}"/>
+        ${other ? shape(other, "team vs") : ""}${shape(row, "team mine")}
+        ${labels}
+      </svg>
+    </div>`;
+}
+
 function categoryChart(board, row, other) {
   const pos = (v, lo, hi) => (hi > lo ? Math.max(0, Math.min(100, ((v - lo) / (hi - lo)) * 100)) : 100);
   const fmt = (v, c) => (c.format === "pct" ? fmtValue(v, c) : Number.isInteger(v) ? String(v) : v.toFixed(1));
@@ -236,6 +289,7 @@ function categoryChart(board, row, other) {
       </div>
       <p class="cat-legend"><span><i class="key-bar"></i>${esc(abbrOf(row.name))}</span>${other ? `<span><i class="key-bar vs"></i>${esc(abbrOf(other.name))}</span>` : ""}<span><i class="key-mark avg"></i>League average</span><span><i class="key-mark best"></i>League best</span></p>
       <div class="cat-cols">${lines}</div>
+      ${radarChart(board, row, other)}
       <div class="notes"><p>All weeks. Each bar runs from 0 to the league's best team in that category${board.cats.some((c) => c.format === "pct") ? "; SV% from the league's lowest" : ""}.</p></div>
     </section>`;
 }

@@ -182,9 +182,18 @@ function starCard(p, i) {
 // as marks on the same track. Every category has its own scale: the track runs from 0 (or the
 // league's lowest value when that is negative) to the best team, so the best mark sits at the end.
 // SV% starts at the league's lowest instead, since every team is close to .900.
-function categoryChart(board, row) {
+function categoryChart(board, row, other) {
   const pos = (v, lo, hi) => (hi > lo ? Math.max(0, Math.min(100, ((v - lo) / (hi - lo)) * 100)) : 100);
   const fmt = (v, c) => (c.format === "pct" ? fmtValue(v, c) : Number.isInteger(v) ? String(v) : v.toFixed(1));
+  const bar = (r, c, lo, best, cls) => {
+    const v = r.values[c.key];
+    return v == null ? `<span class="cat-bar ${cls}"></span>` : `<span class="cat-bar ${cls}" style="height:${pos(v, lo, best).toFixed(1)}%"></span>`;
+  };
+  const describe = (r, c, n) => {
+    const v = r.values[c.key];
+    const rk = r.ranks[c.key];
+    return `${abbrOf(r.name)} ${v == null ? "no value" : fmt(v, c)}${rk ? ` (${ordinal(rk.rank)} of ${n})` : ""}`;
+  };
   const lines = board.cats.filter((c) => c.scored).map((c) => {
     const vals = board.rows.map((r) => r.values[c.key]).filter((v) => v != null);
     if (!vals.length) return "";
@@ -194,25 +203,45 @@ function categoryChart(board, row) {
     const lo = c.format === "pct" ? worst : Math.min(0, worst);
     const mine = row.values[c.key];
     const rk = row.ranks[c.key];
-    const tip = `${c.label}: ${mine == null ? "no value" : fmt(mine, c)}${rk ? ` · rank ${rk.rank} of ${vals.length}` : ""} · average ${fmt(avg, c)} · best ${fmt(best, c)}`;
+    const tip = `${c.label}: ${[row, other].filter(Boolean).map((r) => describe(r, c, vals.length)).join(" · ")} · average ${fmt(avg, c)} · best ${fmt(best, c)}`;
+    // Comparing: the second line shows the other team's value instead of this team's rank.
+    const second = other
+      ? `<span class="cat-rank vs">${other.values[c.key] == null ? "–" : fmt(other.values[c.key], c)}</span>`
+      : `<span class="cat-rank">${rk ? ordinal(rk.rank) : ""}</span>`;
     return `<div class="cat-col" title="${esc(tip)}">
         <span class="cat-value">${mine == null ? "–" : fmt(mine, c)}</span>
-        <span class="cat-rank">${rk ? ordinal(rk.rank) : ""}</span>
-        <span class="cat-track">
-          ${mine == null ? "" : `<span class="cat-bar${rk?.rank === 1 ? " lead" : ""}" style="height:${pos(mine, lo, best).toFixed(1)}%"></span>`}
+        ${second}
+        <span class="cat-track${other ? " two" : ""}">
+          ${bar(row, c, lo, best, "mine")}${other ? bar(other, c, lo, best, "vs") : ""}
           <span class="cat-mark avg" style="bottom:${pos(avg, lo, best).toFixed(1)}%"></span>
           <span class="cat-mark best" style="bottom:100%"></span>
         </span>
         <span class="cat-label">${esc(c.label)}</span>
       </div>`;
   }).join("");
+  const options = board.rows
+    .filter((r) => r.name !== row.name)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((r) => `<option value="${esc(r.name)}"${other?.name === r.name ? " selected" : ""}>${esc(r.name)}</option>`)
+    .join("");
   return `<section class="cat-chart">
-      <h2>Categories</h2>
-      <p class="cat-legend"><span><i class="key-bar"></i>${esc(abbrOf(row.name))}</span><span><i class="key-mark avg"></i>League average</span><span><i class="key-mark best"></i>League best</span></p>
+      <div class="cat-head">
+        <h2>Categories</h2>
+        <label class="compare${other ? " on" : ""}">
+          <span>${other ? `vs ${esc(abbrOf(other.name))}` : "Compare"}</span>
+          <select id="compare" aria-label="Compare with another team">
+            <option value="">${other ? "Stop comparing" : "Compare with…"}</option>${options}
+          </select>
+        </label>
+      </div>
+      <p class="cat-legend"><span><i class="key-bar"></i>${esc(abbrOf(row.name))}</span>${other ? `<span><i class="key-bar vs"></i>${esc(abbrOf(other.name))}</span>` : ""}<span><i class="key-mark avg"></i>League average</span><span><i class="key-mark best"></i>League best</span></p>
       <div class="cat-cols">${lines}</div>
       <div class="notes"><p>All weeks. Each bar runs from 0 to the league's best team in that category${board.cats.some((c) => c.format === "pct") ? "; SV% from the league's lowest" : ""}.</p></div>
     </section>`;
 }
+
+// The team picked under "Compare" on the team page; cleared when you open another team.
+let compareWith = null;
 
 function renderTeam(team) {
   const allBoard = weeklyBoard(data.teams, ALL);
@@ -243,7 +272,8 @@ function renderTeam(team) {
         : `<p class="empty">No skater has ${MIN_GP} games played yet.</p>`}
       <div class="notes">${notes.map((n) => `<p>${n}</p>`).join("")}</div>
     </section>
-    ${season ? categoryChart(allBoard, season) : ""}`;
+    ${season ? categoryChart(allBoard, season, allBoard.rows.find((r) => r.name === compareWith && r.name !== team.name)) : ""}`;
+  $("#compare")?.addEventListener("change", (e) => { compareWith = e.target.value || null; renderTeam(team); });
 }
 
 // ---- Veckans guldgossar (#/guldgossar): the league's 10 best skaters ----
@@ -308,6 +338,7 @@ function route() {
   const onBoard = $("#team-view").hidden && $("#players-view").hidden;
   if ((team || onPlayers) && onBoard) boardScroll = window.scrollY;
   if (team) {
+    compareWith = null;
     renderTeam(team);
     document.title = `${team.name} · ${config.leagueName}`;
   } else if (onPlayers) {

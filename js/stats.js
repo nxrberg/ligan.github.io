@@ -131,26 +131,27 @@ export function leagueSkaters(teams, week) {
   };
 }
 
-// Players ranked like teams on the leaderboard, on per-GP values: in every skater category a
-// player gets pointsWin for each other eligible player he beats and pointsTie for each tie.
+// Players ranked by how far above the league average they are (Jakob, 2026-10-09): in every
+// skater category a player's per-GP value becomes a z-score among the eligible players (how many
+// standard deviations above or below the average), and Score is the sum over the categories.
+// Unlike counting players beaten, a big lead counts for more than a narrow one.
 export function playerBoard(players, minGp) {
-  const rows = players.filter((p) => p.gp >= minGp).map((p) => ({ ...p, catPoints: {}, score: 0 }));
+  const rows = players.filter((p) => p.gp >= minGp).map((p) => ({ ...p, z: {}, heat: {}, score: 0 }));
   for (const c of SKATER_CATS) {
-    for (const r of rows) {
-      let pts = 0;
-      for (const o of rows) {
-        if (o === r) continue;
-        if (r.perGp[c.key] > o.perGp[c.key]) pts += config.pointsWin;
-        else if (r.perGp[c.key] === o.perGp[c.key]) pts += config.pointsTie;
-      }
-      r.catPoints[c.key] = pts;
-      r.score += pts;
-    }
+    const xs = rows.map((r) => r.perGp[c.key]);
+    const mean = xs.reduce((a, b) => a + b, 0) / (xs.length || 1);
+    const sd = Math.sqrt(xs.reduce((a, b) => a + (b - mean) ** 2, 0) / (xs.length || 1));
+    const zs = rows.map((r) => (sd ? (r.perGp[c.key] - mean) / sd : 0));
+    const lo = Math.min(...zs), hi = Math.max(...zs);
+    rows.forEach((r, i) => {
+      r.z[c.key] = zs[i];
+      r.heat[c.key] = hi > lo ? (zs[i] - lo) / (hi - lo) : 0; // 0..1 within the category, for the heatmap
+      r.score += zs[i];
+    });
   }
   rows.sort((a, b) => b.score - a.score || b.perGp.p - a.perGp.p || a.player.localeCompare(b.player));
-  let rank = 0;
-  rows.forEach((r, i) => (r.rank = i && r.score === rows[i - 1].score ? rank : (rank = i + 1)));
-  return { rows, maxPerCat: Math.max(0, rows.length - 1) * config.pointsWin };
+  rows.forEach((r, i) => (r.rank = i + 1));
+  return { rows };
 }
 
 // The team's "3 stars": skaters with at least `minGp` games, best points (G+A) per game first,

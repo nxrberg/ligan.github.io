@@ -212,8 +212,8 @@ function renderTeam(team) {
 
 const TOP_PLAYERS = 10;
 const minGpFor = (w) => (w === ALL ? 3 : 2);
-// Per-game values kept short so they fit a phone: 0.42 -> .42, 1.50 -> 1.5, -0.33 -> -.33, 0.00 -> 0.
-const perGameShort = (v) => v.toFixed(2).replace(/\.?0+$/, "").replace(/^(-?)0\./, "$1.") || "0";
+// Per-game values without trailing zeros: 0.42 -> 0.42, 1.50 -> 1.5, 0.00 -> 0.
+const perGameShort = (v) => v.toFixed(2).replace(/\.?0+$/, "").replace(/^-0$/, "0") || "0";
 
 function renderPlayers() {
   const minGp = minGpFor(week);

@@ -222,6 +222,10 @@ function renderPlayers() {
   const { players, weeksWithoutGp } = leagueSkaters(data.teams, week);
   const { rows, maxPerCat } = playerBoard(players, minGp);
   const top = rows.filter((r) => r.rank <= TOP_PLAYERS);
+  // "Veckans" (this week's) only fits a single week; All covers the whole season.
+  const title = week === ALL ? "Guldgossar" : "Veckans guldgossar";
+  $("#players-title").textContent = title;
+  document.title = `${title} · ${config.leagueName}`;
 
   const head = `<tr><th class="num col-rank">#</th><th class="player">Player</th><th class="num gp">GP</th>${SKATER_CATS.map((c) => `<th class="num cat">${esc(c.label)}</th>`).join("")}<th class="num score">Score</th></tr>`;
   const body = top.map((r) => {
@@ -266,7 +270,6 @@ function route() {
     document.title = `${team.name} · ${config.leagueName}`;
   } else if (onPlayers) {
     renderPlayers();
-    document.title = `Veckans guldgossar · ${config.leagueName}`;
   } else {
     document.title = config.leagueName;
   }

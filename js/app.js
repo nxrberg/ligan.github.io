@@ -226,8 +226,8 @@ function renderPlayers() {
   document.title = `${title} · ${config.leagueName}`;
 
   // Each player is two rows in its own <tbody>: rank, owner's logo, name and NHL team on top,
-  // GP, the categories and Score underneath.
-  const head = `<tr><th class="num gp">GP</th>${SKATER_CATS.map((c) => `<th class="num cat">${esc(c.label)}</th>`).join("")}<th class="num score">Score</th></tr>`;
+  // the categories underneath. Score only orders the list; it's in the name row's tooltip.
+  const head = `<tr>${SKATER_CATS.map((c) => `<th class="num cat">${esc(c.label)}</th>`).join("")}</tr>`;
   const body = top.map((r) => {
     const cells = SKATER_CATS.map((c) => {
       const leads = rows.every((o) => o.perGp[c.key] <= r.perGp[c.key]);
@@ -240,8 +240,8 @@ function renderPlayers() {
       ? `<span class="owner${team.logo ? " has-logo" : ""}" title="${esc(team.name)}">${team.logo ? logoHtml(team) : ""}<span class="owner-abbr">${esc(abbrOf(team.name))}</span></span>`
       : "";
     return `<tbody class="player-block">
-      <tr class="name-row"><td colspan="${SKATER_CATS.length + 2}"><span class="player-rank">${r.rank}</span>${owner}<strong>${esc(r.player)}</strong><span class="player-meta">${esc(r.nhl || "")}</span></td></tr>
-      <tr class="stat-row"><td class="num gp">${r.gp}</td>${cells}<td class="num score"><strong>${r.score}</strong></td></tr>
+      <tr class="name-row"><td colspan="${SKATER_CATS.length}" title="Score ${r.score}"><span class="player-rank">${r.rank}</span>${owner}<strong>${esc(r.player)}</strong><span class="player-meta">${esc([r.nhl, `${r.gp} GP`].filter(Boolean).join(" · "))}</span></td></tr>
+      <tr class="stat-row">${cells}</tr>
     </tbody>`;
   }).join("");
 
@@ -251,7 +251,7 @@ function renderPlayers() {
 
   const info = [
     `Every column is the player's ${week === ALL ? "total over all weeks" : "total for the week"} divided by his games played (GP).`,
-    `Score works like the leaderboard: in each skater category a player gets ${config.pointsWin} points for every other player he beats and ${config.pointsTie} for every tie (max ${maxPerCat} per category).`,
+    `Players are ranked like teams on the leaderboard: in each skater category a player gets ${config.pointsWin} points for every other player he beats and ${config.pointsTie} for every tie (max ${maxPerCat} per category), and the points are added up.`,
     `Skaters on every team's roster with at least ${minGp} GP ${week === ALL ? "over all weeks" : "that week"} take part: ${rows.length} players.`,
     weeksWithoutGp.length ? `Not counted: ${esc(listOf(weeksWithoutGp))}, exported without GP.` : "",
   ].filter(Boolean);

@@ -216,10 +216,6 @@ tbody tr:hover td { background-color: var(--head); }
 /* Veckans guldgossar: the 10 best skaters, per-GP values in the leaderboard's table style.
    Each player is a <tbody> of two rows: name row (spans the table), then the stat row. */
 #players-view .week-tabs { margin-top: 4px; }
-.board.players th.gp { width: 2.4em; }
-.board.players .gp { text-align: center; color: var(--muted); }
-.board.players th.score { width: 3.6em; }
-.board.players td.score { font-size: inherit; }
 .board.players .player-block tr td { background-color: transparent; }
 .board.players .player-block:nth-of-type(even) td { background-color: var(--zebra); }
 .board.players .player-block:hover td { background-color: var(--head); }
@@ -237,10 +233,8 @@ tbody tr:hover td { background-color: var(--head); }
 @media (min-width: 480px) {
   .board.players .name-row td { padding: 12px 8px 2px; }
   .board.players .owner .logo { width: 24px; height: 24px; }
-  .board.players th.score { width: 5em; }
 }
 @media (min-width: 760px) {
   .board.players .name-row td { padding: 14px 12px 2px; }
   .board.players .owner .logo { width: 28px; height: 28px; margin: 0; }
-  .board.players td.score { font-size: 15px; }
 }

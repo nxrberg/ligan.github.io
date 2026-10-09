@@ -278,7 +278,7 @@ tbody tr:hover td { background-color: var(--head); }
 @media (min-width: 760px) {
   .cat-chart { margin-top: 40px; }
   .cat-cols { gap: 14px; max-width: 900px; }
-  .cat-head, .cat-chart .notes { max-width: 900px; }
+  .cat-head, .cat-legend, .cat-chart .notes { max-width: 900px; }
   .cat-track { height: 220px; margin: 6px 8px 8px; }
   .cat-mark { left: -5px; right: -5px; }
   .cat-label { font-size: 12px; letter-spacing: 0.06em; }
@@ -306,7 +306,8 @@ tbody tr:hover td { background-color: var(--head); }
 }
 
 /* Head-to-head pie next to the two teams in the legend: blue = this team's wins, orange = theirs, gray = ties */
-.cat-legend .wins { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.cat-legend .break { flex-basis: 100%; height: 0; }
+.cat-legend .wins { margin-left: auto; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .pie {
   width: 16px; height: 16px; border-radius: 50%;
   background: conic-gradient(var(--accent) 0 var(--a), var(--compare) 0 var(--b), var(--faint) 0);

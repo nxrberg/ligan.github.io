@@ -304,3 +304,12 @@ tbody tr:hover td { background-color: var(--head); }
   .radar { margin-top: 36px; max-width: 460px; }
   .radar-verdict { font-size: 13px; }
 }
+
+/* Head-to-head pie next to the two teams in the legend: blue = this team's wins, orange = theirs, gray = ties */
+.cat-legend .wins { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pie {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: conic-gradient(var(--accent) 0 var(--a), var(--compare) 0 var(--b), var(--faint) 0);
+  box-shadow: 0 0 0 1.5px var(--panel), 0 0 0 2.5px var(--line);
+}
+@media (min-width: 760px) { .pie { width: 20px; height: 20px; } }

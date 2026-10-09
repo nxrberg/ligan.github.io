@@ -182,6 +182,23 @@ function starCard(p, i) {
 // as marks on the same track. Every category has its own scale: the track runs from 0 (or the
 // league's lowest value when that is negative) to the best team, so the best mark sits at the end.
 // SV% starts at the league's lowest instead, since every team is close to .900.
+// Categories won head to head: a value beats no value, missing on both sides is a tie.
+function headToHead(board, row, other) {
+  const better = (c, x, y) => (x == null ? false : y == null ? true : c.lowerIsBetter ? x < y : x > y);
+  const cats = board.cats.filter((c) => c.scored);
+  const won = cats.filter((c) => better(c, row.values[c.key], other.values[c.key])).length;
+  const lost = cats.filter((c) => better(c, other.values[c.key], row.values[c.key])).length;
+  return { won, lost, tied: cats.length - won - lost };
+}
+
+// Small pie of the head-to-head split: this team, the other team, ties.
+function winsPie({ won, lost, tied }, row, other) {
+  const n = won + lost + tied || 1;
+  const a = (won / n) * 360, b = a + (lost / n) * 360;
+  const tip = `${abbrOf(row.name)} wins ${won}, ${abbrOf(other.name)} wins ${lost}${tied ? `, ${tied} tied` : ""}`;
+  return `<span class="wins" title="${esc(tip)}"><i class="pie" style="--a:${a.toFixed(1)}deg;--b:${b.toFixed(1)}deg" role="img" aria-label="${esc(tip)}"></i>${won}–${lost}${tied ? `–${tied}` : ""}</span>`;
+}
+
 // Spider chart of the same categories: each spoke runs from the category's low to the league best
 // (the gold outer ring), on the same scales as the bars. The dashed shape is the league average.
 function radarChart(board, row, other) {
@@ -213,9 +230,7 @@ function radarChart(board, row, other) {
   const better = (c, x, y) => (x == null ? false : y == null ? true : c.lowerIsBetter ? x < y : x > y);
   let verdict;
   if (other) {
-    const won = stats.filter((s) => better(s.c, row.values[s.c.key], other.values[s.c.key])).length;
-    const lost = stats.filter((s) => better(s.c, other.values[s.c.key], row.values[s.c.key])).length;
-    const tied = stats.length - won - lost;
+    const { won, lost, tied } = headToHead(board, row, other);
     const [a, b] = [abbrOf(row.name), abbrOf(other.name)];
     const lead = won === lost ? "Even" : won > lost ? `${a} stronger` : `${b} stronger`;
     verdict = `<strong>${esc(lead)}</strong>: ${esc(a)} wins ${won}, ${esc(b)} wins ${lost}${tied ? `, ${tied} tied` : ""}`;
@@ -287,7 +302,7 @@ function categoryChart(board, row, other) {
           </select>
         </label>
       </div>
-      <p class="cat-legend"><span><i class="key-bar"></i>${esc(abbrOf(row.name))}</span>${other ? `<span><i class="key-bar vs"></i>${esc(abbrOf(other.name))}</span>` : ""}<span><i class="key-mark avg"></i>League average</span><span><i class="key-mark best"></i>League best</span></p>
+      <p class="cat-legend"><span><i class="key-bar"></i>${esc(abbrOf(row.name))}</span>${other ? `<span><i class="key-bar vs"></i>${esc(abbrOf(other.name))}</span>${winsPie(headToHead(board, row, other), row, other)}` : ""}<span><i class="key-mark avg"></i>League average</span><span><i class="key-mark best"></i>League best</span></p>
       <div class="cat-cols">${lines}</div>
       ${radarChart(board, row, other)}
       <div class="notes"><p>All weeks. Each bar runs from 0 to the league's best team in that category${board.cats.some((c) => c.format === "pct") ? "; SV% from the league's lowest" : ""}.</p></div>

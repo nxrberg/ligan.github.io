@@ -21,11 +21,19 @@
         <div class="controls">
           <label class="toggle"><input type="checkbox" id="show-heat" checked /> Heatmap</label>
           <label class="toggle"><input type="checkbox" id="show-rank" /> Cats rank</label>
+          <a class="page-link" href="#/guldgossar">Veckans guldgossar ›</a>
         </div>
         <div id="notes" class="notes"></div>
       </div>
     </section>
     <section id="team-view" class="team-view" hidden></section>
+    <section id="players-view" hidden>
+      <a class="back" href="#/">‹ Leaderboard</a>
+      <h2>Veckans guldgossar</h2>
+      <div id="player-tabs" class="week-tabs" role="tablist" aria-label="Week"></div>
+      <div id="players"></div>
+      <div id="player-notes" class="notes"></div>
+    </section>
   </main>
 
   <script type="module" src="js/app.js"></script>

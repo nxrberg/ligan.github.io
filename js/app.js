@@ -1,6 +1,6 @@
 import { config } from "./config.js";
 import { loadData } from "./data.js";
-import { ALL, SKATER_CATS, seasonSkaters, threeStars, weeksOf, weeklyBoard } from "./stats.js";
+import { ALL, SKATER_CATS, leagueSkaters, playerBoard, seasonSkaters, threeStars, weeksOf, weeklyBoard } from "./stats.js";
 // TanStack Table (headless, MIT) from a pinned CDN build, so the site still needs no build step.
 import { createTable, getCoreRowModel, getSortedRowModel } from "https://cdn.jsdelivr.net/npm/@tanstack/table-core@8.21.3/+esm";
 
@@ -208,23 +208,72 @@ function renderTeam(team) {
     </section>`;
 }
 
+// ---- Veckans guldgossar (#/guldgossar): the league's 10 best skaters ----
+
+const TOP_PLAYERS = 10;
+const minGpFor = (w) => (w === ALL ? 3 : 2);
+// Per-game values kept short so they fit a phone: 0.42 -> .42, 1.50 -> 1.5, -0.33 -> -.33, 0.00 -> 0.
+const perGameShort = (v) => v.toFixed(2).replace(/\.?0+$/, "").replace(/^(-?)0\./, "$1.") || "0";
+// "Brady Tkachuk" -> "B. Tkachuk" for phones.
+const shortName = (n) => n.replace(/^(\S)\S*\s+(?=\S)/u, "$1. ");
+
+function renderPlayers() {
+  const minGp = minGpFor(week);
+  const { players, weeksWithoutGp } = leagueSkaters(data.teams, week);
+  const { rows, maxPerCat } = playerBoard(players, minGp);
+  const top = rows.filter((r) => r.rank <= TOP_PLAYERS);
+
+  const head = `<tr><th class="num col-rank">#</th><th class="player">Player</th><th class="num gp">GP</th>${SKATER_CATS.map((c) => `<th class="num cat">${esc(c.label)}</th>`).join("")}<th class="num score">Score</th></tr>`;
+  const body = top.map((r) => {
+    const cells = SKATER_CATS.map((c) => {
+      const leads = rows.every((o) => o.perGp[c.key] <= r.perGp[c.key]);
+      const heat = showHeat && maxPerCat ? ` style="--heat:${Math.round((r.catPoints[c.key] / maxPerCat) * 100)}%"` : "";
+      const tip = `${r.totals[c.key]} in ${r.gp} GP (${r.perGp[c.key].toFixed(2)}) · ${r.catPoints[c.key]} pts`;
+      return `<td class="num cat${heat ? " heat" : ""}${leads ? " lead" : ""}"${heat} title="${esc(tip)}">${perGameShort(r.perGp[c.key])}</td>`;
+    }).join("");
+    const team = r.team;
+    const meta = [team ? abbrOf(team.name) : "", r.nhl].filter(Boolean).join(" · ");
+    return `<tr><td class="num col-rank">${r.rank}</td>
+      <td class="player" title="${esc(r.player)}${team ? ` · ${esc(team.name)}` : ""}"><strong><span class="full">${esc(r.player)}</span><span class="abbr">${esc(shortName(r.player))}</span></strong><span class="player-meta">${esc(meta)}</span></td>
+      <td class="num gp">${r.gp}</td>${cells}<td class="num score"><strong>${r.score}</strong></td></tr>`;
+  }).join("");
+
+  $("#players").innerHTML = top.length
+    ? `<div class="table-wrap"><table class="board players"><thead>${head}</thead><tbody>${body}</tbody></table></div>`
+    : `<p class="empty">No skater has ${minGp} games played ${week === ALL ? "yet" : `in ${esc(week)}`}.</p>`;
+
+  const info = [
+    `Every column is the player's ${week === ALL ? "total over all weeks" : "total for the week"} divided by his games played (GP).`,
+    `Score works like the leaderboard: in each skater category a player gets ${config.pointsWin} points for every other player he beats and ${config.pointsTie} for every tie (max ${maxPerCat} per category).`,
+    `Skaters on every team's roster with at least ${minGp} GP ${week === ALL ? "over all weeks" : "that week"} take part: ${rows.length} players.`,
+    weeksWithoutGp.length ? `Not counted: ${esc(listOf(weeksWithoutGp))}, exported without GP.` : "",
+  ].filter(Boolean);
+  $("#player-notes").innerHTML = `<details${infoOpen ? " open" : ""}><summary>More information</summary>${info.map((n) => `<p>${n}</p>`).join("")}</details>`;
+  $("#player-notes details").addEventListener("toggle", (e) => { infoOpen = e.target.open; });
+}
+
 let boardScroll = 0;
 
-// Shows the team page for #/team/<slug>, the leaderboard for anything else.
+// Shows the team page for #/team/<slug>, the player page for #/guldgossar, the leaderboard for anything else.
 function route() {
   const slug = location.hash.match(/^#\/team\/([^/?]+)/)?.[1];
   const team = slug && data.teams.find((t) => slugOf(t.name) === decodeURIComponent(slug));
-  const onTeam = !$("#team-view").hidden;
+  const onPlayers = /^#\/guldgossar\b/.test(location.hash);
+  const onBoard = $("#team-view").hidden && $("#players-view").hidden;
+  if ((team || onPlayers) && onBoard) boardScroll = window.scrollY;
   if (team) {
-    if (!onTeam) boardScroll = window.scrollY;
     renderTeam(team);
     document.title = `${team.name} · ${config.leagueName}`;
+  } else if (onPlayers) {
+    renderPlayers();
+    document.title = `Veckans guldgossar · ${config.leagueName}`;
   } else {
     document.title = config.leagueName;
   }
-  $("#board-view").hidden = !!team;
+  $("#board-view").hidden = !!team || onPlayers;
   $("#team-view").hidden = !team;
-  window.scrollTo(0, team ? 0 : boardScroll);
+  $("#players-view").hidden = !onPlayers;
+  window.scrollTo(0, team || onPlayers ? 0 : boardScroll);
 }
 
 async function init() {
@@ -243,17 +292,21 @@ async function init() {
   }
 
   const weeks = weeksOf(data.teams);
-  const tabs = $("#week-tabs");
-  tabs.innerHTML = [...weeks, ALL].map((w) => `<button role="tab" data-week="${esc(w)}">${esc(w)}</button>`).join("");
+  // The leaderboard and the player page each have a row of week tabs; both pick the same week.
+  const tabRows = [$("#week-tabs"), $("#player-tabs")];
   const selectWeek = (w) => {
     week = w;
-    tabs.querySelectorAll("[data-week]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.week === w)));
+    for (const tabs of tabRows) tabs.querySelectorAll("[data-week]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.week === w)));
     render();
+    if (!$("#players-view").hidden) renderPlayers();
   };
-  tabs.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-week]");
-    if (b) selectWeek(b.dataset.week);
-  });
+  for (const tabs of tabRows) {
+    tabs.innerHTML = [...weeks, ALL].map((w) => `<button role="tab" data-week="${esc(w)}">${esc(w)}</button>`).join("");
+    tabs.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-week]");
+      if (b) selectWeek(b.dataset.week);
+    });
+  }
   $("#show-rank").addEventListener("change", (e) => { showRank = e.target.checked; render(); });
   $("#show-heat").checked = showHeat;
   $("#show-heat").addEventListener("change", (e) => { showHeat = e.target.checked; writePref("heatmap", showHeat); render(); });
@@ -264,7 +317,7 @@ async function init() {
     return route();
   }
   selectWeek(weeks.at(-1));
-  tabs.scrollLeft = tabs.scrollWidth; // latest week in view when there are many
+  for (const tabs of tabRows) tabs.scrollLeft = tabs.scrollWidth; // latest week in view when there are many
   route();
 }
 

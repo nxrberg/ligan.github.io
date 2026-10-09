@@ -83,33 +83,74 @@ export const SKATER_CATS = [
   { key: "sog", label: "SOG" },
 ];
 
-// A team's skaters over the season: every week a player was on the roster is summed, and each
-// category is divided by games played. Weeks exported without GP can't give an average, so
-// they're left out and listed in `weeksWithoutGp`.
-export function seasonSkaters(team) {
+// Sums skater rows into one line per player and divides each category by games played. Rows
+// without GP are skipped. `entries` are { team, skaters } in week order; a player's NHL team,
+// position and fantasy team come from the latest row.
+function sumSkaters(entries) {
   const players = new Map();
-  const weeksWithoutGp = [];
-  const weeks = Object.values(team.weeks).sort((a, b) => a.weekNo - b.weekNo);
-  for (const w of weeks) {
-    const sk = w.skaters || [];
-    if (!sk.length) continue;
-    if (sk.every((p) => p.gp == null)) { weeksWithoutGp.push(w.week); continue; }
-    for (const p of sk) {
+  for (const { team, skaters } of entries) {
+    for (const p of skaters) {
       if (!p.gp) continue;
       const cur = players.get(p.player) || { player: p.player, nhl: p.nhl, pos: p.pos, gp: 0, weeks: 0, totals: {} };
-      Object.assign(cur, { nhl: p.nhl || cur.nhl, pos: p.pos || cur.pos }); // latest week wins
+      Object.assign(cur, { nhl: p.nhl || cur.nhl, pos: p.pos || cur.pos, team: team ?? cur.team }); // latest week wins
       cur.gp += p.gp;
       cur.weeks += 1;
       for (const c of SKATER_CATS) cur.totals[c.key] = (cur.totals[c.key] || 0) + (p.stats[c.key] || 0);
       players.set(p.player, cur);
     }
   }
-  const list = [...players.values()].map((p) => ({
+  return [...players.values()].map((p) => ({
     ...p,
     points: p.totals.g + p.totals.a,
     perGp: Object.fromEntries([["p", (p.totals.g + p.totals.a) / p.gp], ...SKATER_CATS.map((c) => [c.key, p.totals[c.key] / p.gp])]),
   }));
-  return { players: list, weeksWithoutGp };
+}
+
+// Weeks exported without GP (every skater's gp blank) can't give an average.
+const hasGp = (w) => (w.skaters || []).some((p) => p.gp != null);
+
+// A team's skaters over the season: every week a player was on the roster is summed, and each
+// category is divided by games played. Weeks exported without GP can't give an average, so
+// they're left out and listed in `weeksWithoutGp`.
+export function seasonSkaters(team) {
+  const weeks = Object.values(team.weeks).filter((w) => w.skaters?.length).sort((a, b) => a.weekNo - b.weekNo);
+  return {
+    players: sumSkaters(weeks.filter(hasGp).map((w) => ({ skaters: w.skaters }))),
+    weeksWithoutGp: weeks.filter((w) => !hasGp(w)).map((w) => w.week),
+  };
+}
+
+// Every skater in the league for one week (or summed over all weeks for ALL), each with the
+// fantasy team he played for (the latest one, if he moved).
+export function leagueSkaters(teams, week) {
+  const weeks = teams.flatMap((t) => Object.values(t.weeks).filter((w) => w.skaters?.length && (week === ALL || w.week === week)).map((w) => ({ team: t, w })));
+  weeks.sort((a, b) => a.w.weekNo - b.w.weekNo);
+  return {
+    players: sumSkaters(weeks.filter(({ w }) => hasGp(w)).map(({ team, w }) => ({ team, skaters: w.skaters }))),
+    weeksWithoutGp: [...new Set(weeks.filter(({ w }) => !hasGp(w)).map(({ w }) => w.week))],
+  };
+}
+
+// Players ranked like teams on the leaderboard, on per-GP values: in every skater category a
+// player gets pointsWin for each other eligible player he beats and pointsTie for each tie.
+export function playerBoard(players, minGp) {
+  const rows = players.filter((p) => p.gp >= minGp).map((p) => ({ ...p, catPoints: {}, score: 0 }));
+  for (const c of SKATER_CATS) {
+    for (const r of rows) {
+      let pts = 0;
+      for (const o of rows) {
+        if (o === r) continue;
+        if (r.perGp[c.key] > o.perGp[c.key]) pts += config.pointsWin;
+        else if (r.perGp[c.key] === o.perGp[c.key]) pts += config.pointsTie;
+      }
+      r.catPoints[c.key] = pts;
+      r.score += pts;
+    }
+  }
+  rows.sort((a, b) => b.score - a.score || b.perGp.p - a.perGp.p || a.player.localeCompare(b.player));
+  let rank = 0;
+  rows.forEach((r, i) => (r.rank = i && r.score === rows[i - 1].score ? rank : (rank = i + 1)));
+  return { rows, maxPerCat: Math.max(0, rows.length - 1) * config.pointsWin };
 }
 
 // The team's "3 stars": skaters with at least `minGp` games, best points (G+A) per game first,

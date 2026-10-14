@@ -96,7 +96,7 @@ td.num, .star-stats dd, .cat-value, .board.players .player-rank, .cat-legend .wi
 /* Mobile first: small type and tight cells so all 10 categories fit a phone; the overall #
    column and full team names come back as the screen grows. */
 .board { font-size: 10.5px; letter-spacing: -0.03em; }
-.board th, .board td { padding: 8px 1px; }
+.board th, .board td { padding: 2px 1px; }
 .board th { font-size: 9px; letter-spacing: -0.04em; }
 .board th:first-child, .board td:first-child { padding-left: 6px; }
 .board th:last-child, .board td:last-child { padding-right: 6px; }
@@ -132,7 +132,7 @@ td.num, .star-stats dd, .cat-value, .board.players .player-rank, .cat-legend .wi
 .board.totals th { font-size: 8.5px; }
 @media (min-width: 480px) {
   .board, .board.totals { font-size: 12px; letter-spacing: 0; }
-  .board th, .board td, .board.totals th, .board.totals td { padding: 10px 4px; }
+  .board th, .board td, .board.totals th, .board.totals td { padding: 2px 4px; }
   .board th, .board.totals th { font-size: 10px; letter-spacing: 0.06em; }
   .board .col-rank { display: table-cell; }
   .board .col-toggle { padding: 2px 3px; margin: -2px -2px -2px 0; }
@@ -141,7 +141,7 @@ td.num, .star-stats dd, .cat-value, .board.players .player-rank, .cat-legend .wi
 }
 @media (min-width: 760px) {
   .board, .board.totals { font-size: 14px; }
-  .board th, .board td, .board.totals th, .board.totals td { padding: 14px 12px; }
+  .board th, .board td, .board.totals th, .board.totals td { padding: 2px 12px; }
   .board th, .board.totals th { font-size: 12px; letter-spacing: 0.12em; }
   .board .team .full { display: inline; }
   .board .team .abbr { display: none; }

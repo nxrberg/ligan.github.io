@@ -546,6 +546,9 @@ function route() {
 
 async function init() {
   document.title = config.leagueName;
+  // The title reloads the page: saved to the home screen the site has no browser reload button. Set
+  // up before the data loads, so it also retries a failed load.
+  $("#reload").addEventListener("click", () => location.reload());
 
   try {
     data = await loadData();

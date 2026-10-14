@@ -67,6 +67,8 @@ function parseTeam(rows) {
       week,
       weekNo: weekNo(week),
       fetched: latest,
+      // Who the team played that week: the export's `opponent` column, on any row of the fetch.
+      opponent: rs.map((r) => String(r.opponent ?? "").trim()).find(Boolean) || null,
       shifted,
       skaters: rs.filter((r) => r.type === "Skater" && r.player).map((r) => skaterOf(r, shifted)),
       stats: {
@@ -93,15 +95,22 @@ function logosOf(rows) {
   return m;
 }
 
-// Daily tab rows -> { week -> { team name -> opponent name } }. A matchup lasts the whole week, so
-// any day's row gives it. Names are matched loosely against config.teams ("kingkordies" -> "Kingkordies").
-function matchupsOf(rows) {
+// Each week's head-to-head matchups as { week -> { team name -> opponent name } }. They come from
+// the `opponent` column on the team tabs, and from the Daily tab (Team and Opponent per player
+// row and date) for weeks the team tabs don't cover; a matchup lasts the whole week, so any day's
+// row gives it. A matchup known from one side only is filled in for the other team too. Names are
+// matched loosely against config.teams ("kingkordies" -> "Kingkordies").
+function matchupsOf(teams, dailyRows) {
   const names = new Map(config.teams.flatMap((t) => [[key(t.name), t.name], [key(t.sheet), t.name]]));
+  const fromTabs = teams.flatMap((t) => Object.values(t.weeks).map((w) => ({ week: w.week, team: t.name, opponent: w.opponent })));
   const weeks = {};
-  for (const r of rows) {
+  for (const r of [...dailyRows, ...fromTabs]) { // team tabs last, so they win over the Daily tab
     const team = names.get(key(r.team));
     const opponent = names.get(key(r.opponent));
     if (r.week && team && opponent && team !== opponent) (weeks[r.week] ||= {})[team] = opponent;
+  }
+  for (const opponents of Object.values(weeks)) {
+    for (const [team, opponent] of Object.entries(opponents)) opponents[opponent] ??= team;
   }
   return weeks;
 }
@@ -152,5 +161,5 @@ export async function loadData() {
     logo: logos.get(key(t.name)) || logos.get(key(t.sheet)) || null,
     weeks: parseTeam(rowsOf(tabOf(all, t.sheet, t.name) || [])),
   }));
-  return { source, teams, matchups: matchupsOf(rowsOf(tabOf(all, config.dailySheet) || [])) };
+  return { source, teams, matchups: matchupsOf(teams, rowsOf(tabOf(all, config.dailySheet) || [])) };
 }

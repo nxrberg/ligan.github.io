@@ -147,7 +147,7 @@ td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend 
 .dialog-body { position: relative; padding: 18px 16px 16px; }
 .dialog-close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 20px; line-height: 1; cursor: pointer; }
 .dialog-close:hover { background: var(--chip); color: var(--text); }
-.dialog-head { display: flex; align-items: center; gap: 8px; margin: -6px -8px 2px 0; }
+.dialog-head { display: flex; align-items: center; gap: 8px; margin: -6px -8px 2px 0; outline: none; } /* focused on open, never shown */
 .dialog-head h3 { flex: 1; min-width: 0; margin: 0; font-size: 15px; }
 .dialog-head .dialog-close { position: static; flex: none; }
 /* "More details →": a plain link to the team page */

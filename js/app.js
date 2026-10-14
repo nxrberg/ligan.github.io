@@ -2,6 +2,7 @@ import { config } from "./config.js";
 import { loadData } from "./data.js";
 import { ALL, SKATER_CATS, leagueSkaters, matchupLuck, playerBoard, seasonLuck, seasonSkaters, threeStars, weeksOf, weeklyBoard } from "./stats.js";
 // TanStack Table (headless, MIT) from a pinned CDN build, so the site still needs no build step.
+import { closeSheet, openSheet, setupSheet } from "./sheet.js";
 import { createTable, getCoreRowModel, getSortedRowModel } from "https://cdn.jsdelivr.net/npm/@tanstack/table-core@8.21.3/+esm";
 
 const $ = (s) => document.querySelector(s);
@@ -145,7 +146,8 @@ function showLuck(name, byKeyboard = false) {
       ${gameCatsHtml(name, g)}
     </li>`).join("");
   const dlg = $("#luck-dialog");
-  dlg.innerHTML = `<div class="dialog-body">
+  dlg.innerHTML = `<div class="sheet-handle" aria-hidden="true"></div>
+    <div class="dialog-body">
       <div class="dialog-head" tabindex="-1">
         <h3>${esc(name)}</h3>
         <a class="details-link" href="#/team/${slugOf(name)}">More details <span aria-hidden="true">→</span></a>
@@ -159,8 +161,8 @@ function showLuck(name, byKeyboard = false) {
       </dl>
       <ul class="luck-games">${games}</ul>
     </div>`;
-  dlg.querySelector(".dialog-close").addEventListener("click", () => dlg.close());
-  dlg.querySelector(".details-link").addEventListener("click", () => dlg.close()); // the link opens the team page
+  dlg.querySelector(".dialog-close").addEventListener("click", () => closeSheet(dlg));
+  dlg.querySelector(".details-link").addEventListener("click", () => closeSheet(dlg)); // the link opens the team page
   for (const b of dlg.querySelectorAll(".game-head")) {
     b.addEventListener("click", () => {
       const open = b.getAttribute("aria-expanded") !== "true";
@@ -168,13 +170,13 @@ function showLuck(name, byKeyboard = false) {
       b.nextElementSibling.hidden = !open;
     });
   }
-  dlg.onclick = (e) => { if (e.target === dlg) dlg.close(); }; // a tap on the backdrop closes it
+  dlg.onclick = (e) => { if (e.target === dlg) closeSheet(dlg); }; // a tap on the backdrop closes it
   // Focus rings are for the keyboard only, but iOS Safari draws one on whatever gets focus. So the
   // dialog opens with focus on its own header (the first focusable element, tabindex -1, no ring)
   // rather than the More details link, and after a tap the row doesn't keep the focus the browser
   // hands back on closing. Opened with Enter, focus returns to the row.
   dlg.onclose = () => { if (!byKeyboard) document.activeElement?.blur(); };
-  dlg.showModal();
+  openSheet(dlg); // a bottom sheet on phones, see sheet.js
 }
 
 function cellHtml(cell, maxPerCat) {
@@ -548,6 +550,7 @@ async function init() {
   // The title reloads the page: saved to the home screen the site has no browser reload button. Set
   // up before the data loads, so it also retries a failed load.
   $("#reload").addEventListener("click", () => location.reload());
+  setupSheet($("#luck-dialog"));
 
   try {
     data = await loadData();

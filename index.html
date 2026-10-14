@@ -19,8 +19,10 @@
         <div id="week-tabs" class="week-tabs" role="tablist" aria-label="Week"></div>
         <div id="board"></div>
         <div class="controls">
-          <label class="toggle"><input type="checkbox" id="show-heat" checked /> Heatmap</label>
-          <label class="toggle"><input type="checkbox" id="show-rank" /> Cats rank</label>
+          <div class="switches">
+            <label class="switch"><input type="checkbox" role="switch" id="show-heat" checked /><span class="track"></span>Heatmap</label>
+            <label class="switch"><input type="checkbox" role="switch" id="show-rank" /><span class="track"></span>Show rank</label>
+          </div>
           <a class="page-link" href="#/guldgossar">Veckans guldgossar ›</a>
         </div>
         <div id="notes" class="notes"></div>

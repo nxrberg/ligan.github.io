@@ -1,6 +1,6 @@
 import { config } from "./config.js";
 import { loadData } from "./data.js";
-import { ALL, SKATER_CATS, leagueSkaters, playerBoard, seasonSkaters, threeStars, weeksOf, weeklyBoard } from "./stats.js";
+import { ALL, SKATER_CATS, leagueSkaters, matchupLuck, playerBoard, seasonLuck, seasonSkaters, threeStars, weeksOf, weeklyBoard } from "./stats.js";
 // TanStack Table (headless, MIT) from a pinned CDN build, so the site still needs no build step.
 import { createTable, getCoreRowModel, getSortedRowModel } from "https://cdn.jsdelivr.net/npm/@tanstack/table-core@8.21.3/+esm";
 
@@ -14,6 +14,7 @@ let sorting = [{ id: "score", desc: true }]; // click a column header to sort by
 let showHeat = readPref("heatmap", true);
 let infoOpen = false; // the (i) notes under the table stay open across re-renders
 const expanded = new Set(); // categories whose `toggledBy` columns are showing
+let luck = new Map(); // team name -> { actual, worth, weeks } for the shown week, from matchupLuck
 
 // Per-viewer display preferences; storage can be unavailable, so fall back quietly.
 function readPref(key, fallback) {
@@ -81,13 +82,57 @@ function headerHtml(h) {
   return `<th class="${classes}" ${attrs} title="${esc(title)}">${esc(label)}${arrow}${toggle}</th>`;
 }
 
+// "underpaid" when the matchup paid at least config.luckThreshold points less than the play was
+// worth (per week on All), "overpaid" when it paid that much more, "" otherwise. See matchupLuck.
+const gapOf = (l) => (l.actual - l.worth) / l.weeks;
+const paidOf = (gap) => (gap >= config.luckThreshold ? "overpaid" : gap <= -config.luckThreshold ? "underpaid" : "");
+
+// Score, coloured by paidOf. With a known matchup it's a button that opens the Actual vs Worth dialog.
+function scoreCellHtml(r, cls) {
+  const l = luck.get(r.name);
+  if (!l) return `<td class="${cls}"><strong>${r.score}</strong></td>`;
+  const paid = paidOf(gapOf(l));
+  return `<td class="${cls}${paid ? ` ${paid}` : ""}"><button type="button" class="score-btn" data-team="${esc(r.name)}" title="Actual vs worth"><strong>${r.score}</strong></button></td>`;
+}
+
+// The dialog behind a Score: Actual, Worth and the gap, then each known matchup (opponent,
+// category record, points) so the numbers can be checked.
+function showLuck(name) {
+  const l = luck.get(name);
+  if (!l) return;
+  const gap = gapOf(l);
+  const paid = paidOf(gap);
+  const perWeek = l.weeks > 1 ? " per week" : "";
+  const verdict = paid === "underpaid" ? `Underpaid by ${(-gap).toFixed(1)}${perWeek}`
+    : paid === "overpaid" ? `Overpaid by ${gap.toFixed(1)}${perWeek}`
+    : `About what the week${l.weeks > 1 ? "s were" : " was"} worth`;
+  const games = l.games.map((g) => `<li><span>${esc(g.week)} vs <strong>${esc(g.opponent)}</strong></span><span class="luck-rec">${g.won}–${g.lost}–${g.tied} · ${g.actual} pts · worth ${g.worth.toFixed(1)}</span></li>`).join("");
+  const others = data.teams.length - 1;
+  const dlg = $("#luck-dialog");
+  dlg.innerHTML = `<div class="dialog-body">
+      <button type="button" class="dialog-close" aria-label="Close">×</button>
+      <h3>${esc(name)}</h3>
+      <p class="luck-verdict${paid ? ` ${paid}` : ""}">${verdict}</p>
+      <dl class="luck-nums">
+        <div><dt>Actual</dt><dd>${l.actual}</dd></div>
+        <div><dt>Worth</dt><dd>${l.worth.toFixed(1)}</dd></div>
+        <div class="${paid}"><dt>Gap</dt><dd>${signed(l.actual - l.worth)}</dd></div>
+      </dl>
+      <ul class="luck-games">${games}</ul>
+      <p class="luck-explain">Actual is the matchup result: ${config.pointsWin} per category won, ${config.pointsTie} per tie (record is won–lost–tied). Worth is the week's Score divided by ${others}, what it would earn against an average team. Coloured at a gap of ${config.luckThreshold} or more${l.weeks > 1 ? " per week" : ""}.</p>
+    </div>`;
+  dlg.querySelector(".dialog-close").addEventListener("click", () => dlg.close());
+  dlg.onclick = (e) => { if (e.target === dlg) dlg.close(); }; // a tap on the backdrop closes it
+  dlg.showModal();
+}
+
 function cellHtml(cell, maxPerCat) {
   const r = cell.row.original;
   const { cat: c, cls = "" } = cell.column.columnDef.meta;
   if (cell.column.id === "rank") return `<td class="${cls}">${r.rank}</td>`;
   if (cell.column.id === "team")
     return `<td class="${cls}${r.logo ? " has-logo" : ""}" title="${esc(r.name)}"><a class="team-link" href="#/team/${slugOf(r.name)}">${logoHtml(r)}<strong><span class="full">${esc(r.name)}</span><span class="abbr">${esc(abbrOf(r.name))}</span></strong></a></td>`;
-  if (cell.column.id === "score") return `<td class="${cls}"><strong>${r.score}</strong></td>`;
+  if (cell.column.id === "score") return scoreCellHtml(r, cls);
 
   const p = r.points[c.key];
   const heat = showHeat && c.scored && p != null ? p / maxPerCat : null;
@@ -147,6 +192,7 @@ function render() {
   const board = weeklyBoard(data.teams, week);
   const { rows, maxPerCat, maxScore } = board;
   allCats = board.cats;
+  luck = week === ALL ? seasonLuck(data.teams, data.matchups) : matchupLuck(board, data.matchups[week], week);
   const table = makeTable(rows, board.cats);
 
   const head = table.getHeaderGroups().map((g) => `<tr>${g.headers.map(headerHtml).join("")}</tr>`).join("");
@@ -155,6 +201,10 @@ function render() {
     .join("");
 
   $("#board").innerHTML = `<div class="table-wrap"><table class="board${week === ALL ? " totals" : ""}${expanded.size ? " wide" : ""}${rows.some((r) => r.logo) ? " logos" : ""}"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  $("#board").querySelector("tbody").addEventListener("click", (e) => {
+    const b = e.target.closest(".score-btn");
+    if (b) showLuck(b.dataset.team);
+  });
   $("#board").querySelector("thead").addEventListener("click", (e) => {
     const t = e.target.closest("[data-toggle]");
     if (t) {
@@ -170,6 +220,8 @@ function render() {
   const info = [
     `Each category gives ${config.pointsWin} points for every team you beat and ${config.pointsTie} for every tie (max ${maxPerCat} per category, ${maxScore} total).`,
     "A team with a value in a category beats a team without one, and two teams without a value tie.",
+    `Score is <span class="underpaid">red</span> when a team's real matchup paid it at least ${config.luckThreshold} points less than its week was worth, and <span class="overpaid">green</span> when it paid at least ${config.luckThreshold} more${week === ALL ? " (per week, over the weeks with known matchups)" : ""}. Actual is the matchup result (${config.pointsWin} per category won, ${config.pointsTie} per tie); worth is Score divided by ${rows.length - 1}, what the week would earn against an average team. Tap a Score to see both.`,
+    luck.size ? "" : `The matchups for ${week === ALL ? "these weeks" : esc(week)} aren't in the data yet, so no Score is coloured.`,
   ].filter(Boolean);
   $("#notes").innerHTML = infoHtml(info, fetched ? `Data fetched ${esc(fetched)}.` : "");
   bindInfo($("#notes"));

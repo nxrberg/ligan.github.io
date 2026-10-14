@@ -14,6 +14,8 @@
   --lead: #d4a017;
   --num-font: "Roboto Mono", ui-monospace, monospace;
   --compare: #d9735b;
+  --underpaid: #c0392b;
+  --overpaid: #2e8b4f;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
@@ -21,6 +23,7 @@
     --panel: #121a1e; --head: #172126; --zebra: #141b1f; --chip: #222c31;
     --text: #d7dcde; --muted: #7f8a90; --faint: #4c575c; --line: #26302f;
     --accent: #5aa0c2; --on-accent: #08161d; --lead: #e3b341; --compare: #e48a72;
+    --underpaid: #f0776b; --overpaid: #5cc98a;
   }
 }
 
@@ -129,6 +132,30 @@ td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend 
 .board .col-rank { display: none; }
 .board td.score { font-weight: 700; font-size: 11px; background-image: linear-gradient(color-mix(in srgb, var(--chip) 45%, transparent), color-mix(in srgb, var(--chip) 45%, transparent)); }
 .board th.score { width: 4em; }
+/* Matchup luck: red when the real matchup paid much less than the week was worth, green when much more */
+.board td.score.underpaid, .notes .underpaid, .dialog .underpaid { color: var(--underpaid); }
+.board td.score.overpaid, .notes .overpaid, .dialog .overpaid { color: var(--overpaid); }
+/* Score as a button (when the matchup is known): looks like the number, opens the Actual vs Worth dialog */
+.score-btn { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline dotted 1px; text-underline-offset: 3px; }
+.score-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+/* Actual vs Worth dialog */
+.dialog { width: min(360px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--text); }
+.dialog::backdrop { background: rgb(0 0 0 / 0.45); }
+.dialog-body { position: relative; padding: 18px 16px 16px; }
+.dialog-close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 20px; line-height: 1; cursor: pointer; }
+.dialog-close:hover { background: var(--chip); color: var(--text); }
+.dialog h3 { margin: 0 36px 2px 0; font-size: 15px; }
+.luck-verdict { margin: 0 0 12px; font-size: 12px; color: var(--muted); }
+.luck-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 0 0 12px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.luck-nums div { background: var(--panel); padding: 8px 0; text-align: center; }
+.luck-nums dt { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.luck-nums dd { margin: 2px 0 0; font-family: var(--num-font); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.luck-games { list-style: none; margin: 0 0 12px; padding: 0; font-size: 12px; }
+.luck-games li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; padding: 6px 0; border-top: 1px solid var(--line); }
+.luck-games li:last-child { border-bottom: 1px solid var(--line); }
+.luck-rec { color: var(--muted); font-family: var(--num-font); }
+.luck-explain { margin: 0; font-size: 11px; color: var(--muted); }
 .board td.heat { --heat-c: color-mix(in srgb, var(--accent) calc(var(--heat) * 0.4), transparent); background-image: linear-gradient(var(--heat-c), var(--heat-c)); }
 .board .unscored { color: var(--muted); }
 /* Category leaders get a dotted box, drawn as a border on a layer inside the cell so the layout doesn't shift

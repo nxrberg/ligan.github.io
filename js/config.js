@@ -13,6 +13,9 @@ export const config = {
   // Sheety endpoint for the Teams tab (Id, Team, Logo, Updated) that the export writes; gives each team's logo.
   teamsSheet: "teams",
 
+  // The Daily tab (player rows per date with Team and Opponent); gives each week's head-to-head matchups.
+  dailySheet: "daily",
+
   // `sheet` is the Sheety endpoint name for the team's tab (it gets URL-encoded, so "#10" and "q's" are fine).
   // `abbr` is the short name shown on narrow screens.
   teams: [
@@ -52,4 +55,8 @@ export const config = {
   // Points per opponent in each category.
   pointsWin: 2,
   pointsTie: 1,
+
+  // Score turns red (underpaid) or green (overpaid) when a team's matchup result is at least this
+  // many points from what its play was worth against an average team (averaged per week on All).
+  luckThreshold: 4,
 };

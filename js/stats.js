@@ -19,9 +19,18 @@ function allWeeksLine(team) {
   return { week: ALL, fetched: ws.map((w) => w.fetched).sort().at(-1), stats };
 }
 
-// Score = for every scored category, pointsWin per team you beat and pointsTie per team you tie.
-// Every scored category always counts: a team with a value beats a team without one, and two
-// teams without a value tie (Jakob, 2026-10-07).
+// Points one team's value earns against another's in a category: pointsWin for a win, pointsTie
+// for a tie. A team with a value beats a team without one, and two teams without a value tie
+// (Jakob, 2026-10-07).
+function catPoints(c, mine, theirs) {
+  const better = c.lowerIsBetter ? mine < theirs : mine > theirs;
+  if (mine == null) return theirs == null ? config.pointsTie : 0;
+  if (theirs == null || better) return config.pointsWin;
+  return mine === theirs ? config.pointsTie : 0;
+}
+
+// Score = for every scored category, catPoints against every other team. Every scored category
+// always counts, so a team without a value still ties the others without one.
 export function weeklyBoard(teams, week) {
   const lines = teams.map((t) => ({ name: t.name, logo: t.logo, line: week === ALL ? allWeeksLine(t) : t.weeks[week] || null }));
   const cats = config.categories.map((c) => ({ ...c, scored: c.scored !== false }));
@@ -40,15 +49,7 @@ export function weeklyBoard(teams, week) {
     if (!c.scored) continue;
     const better = c.lowerIsBetter ? (x, y) => x < y : (x, y) => x > y;
     for (const r of rows) {
-      const mine = r.values[c.key];
-      let p = 0;
-      for (const o of rows) {
-        if (o === r) continue;
-        const theirs = o.values[c.key];
-        if (mine == null) p += theirs == null ? config.pointsTie : 0;
-        else if (theirs == null || better(mine, theirs)) p += config.pointsWin;
-        else if (mine === theirs) p += config.pointsTie;
-      }
+      const p = rows.reduce((sum, o) => (o === r ? sum : sum + catPoints(c, r.values[c.key], o.values[c.key])), 0);
       r.points[c.key] = p;
       r.score += p;
     }
@@ -70,6 +71,43 @@ export function weeklyBoard(teams, week) {
 
   const maxPerCat = (teams.length - 1) * config.pointsWin;
   return { rows, cats, maxPerCat, maxScore: maxPerCat * cats.filter((c) => c.scored).length };
+}
+
+// Was a team over- or underpaid by its matchup? (Jakob, 2026-10-14) Actual is what it earned
+// against its real opponent (catPoints in every scored category, so 6 wins and 2 ties of 10 is
+// 14). Worth is its Score divided by the number of other teams: what its week would earn against
+// an average opponent. `opponents` is { team name -> opponent name } for the board's `week`.
+// Returns Map of team name -> { actual, worth, weeks: 1, games: [one game] } for the teams whose
+// matchup is known; a game also has the opponent, the category record (won, lost, tied) and Score.
+export function matchupLuck(board, opponents = {}, week = "") {
+  const byName = new Map(board.rows.map((r) => [r.name, r]));
+  const scored = board.cats.filter((c) => c.scored);
+  const out = new Map();
+  for (const r of board.rows) {
+    const o = byName.get(opponents[r.name]);
+    if (!o || !r.line || !o.line) continue;
+    const game = { week, opponent: o.name, score: r.score, actual: 0, worth: r.score / (board.rows.length - 1), won: 0, lost: 0, tied: 0 };
+    for (const c of scored) {
+      const p = catPoints(c, r.values[c.key], o.values[c.key]);
+      game.actual += p;
+      game[p === config.pointsWin ? "won" : p === config.pointsTie ? "tied" : "lost"] += 1;
+    }
+    out.set(r.name, { actual: game.actual, worth: game.worth, weeks: 1, games: [game] });
+  }
+  return out;
+}
+
+// matchupLuck over all weeks: Actual and Worth summed over the weeks whose matchups are known.
+export function seasonLuck(teams, matchups) {
+  const out = new Map();
+  const weeks = Object.keys(matchups).sort((a, b) => Number(a.match(/\d+/)?.[0]) - Number(b.match(/\d+/)?.[0]));
+  for (const week of weeks) {
+    for (const [name, l] of matchupLuck(weeklyBoard(teams, week), matchups[week], week)) {
+      const cur = out.get(name) || { actual: 0, worth: 0, weeks: 0, games: [] };
+      out.set(name, { actual: cur.actual + l.actual, worth: cur.worth + l.worth, weeks: cur.weeks + 1, games: [...cur.games, ...l.games] });
+    }
+  }
+  return out;
 }
 
 // Skater categories shown on the team page, as averages per game played.

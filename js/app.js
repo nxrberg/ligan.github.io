@@ -87,12 +87,20 @@ function headerHtml(h) {
 const gapOf = (l) => (l.actual - l.worth) / l.weeks;
 const paidOf = (gap) => (gap >= config.luckThreshold ? "overpaid" : gap <= -config.luckThreshold ? "underpaid" : "");
 
-// Score, coloured by paidOf. With a known matchup it's a button that opens the Actual vs Worth dialog.
+// Score, coloured by paidOf. With a known matchup it's underlined dotted: the row opens the Actual
+// vs Worth dialog.
 function scoreCellHtml(r, cls) {
   const l = luck.get(r.name);
   if (!l) return `<td class="${cls}"><strong>${r.score}</strong></td>`;
   const paid = paidOf(gapOf(l));
-  return `<td class="${cls}${paid ? ` ${paid}` : ""}"><button type="button" class="score-btn" data-team="${esc(r.name)}" title="Actual vs worth"><strong>${r.score}</strong></button></td>`;
+  return `<td class="${cls}${paid ? ` ${paid}` : ""}"><strong class="score-link">${r.score}</strong></td>`;
+}
+
+// A click (or Enter) on a leaderboard row opens the team's Actual vs Worth dialog; without a known
+// matchup that week there's nothing to show, so it opens the team page instead.
+function openTeam(name) {
+  if (luck.has(name)) showLuck(name);
+  else location.hash = `#/team/${slugOf(name)}`;
 }
 
 // The dialog behind a Score: Actual, Worth and the gap, then each known matchup (opponent,
@@ -139,8 +147,11 @@ function showLuck(name) {
     </li>`).join("");
   const dlg = $("#luck-dialog");
   dlg.innerHTML = `<div class="dialog-body">
-      <button type="button" class="dialog-close" aria-label="Close">×</button>
-      <h3>${esc(name)}</h3>
+      <div class="dialog-head">
+        <h3>${esc(name)}</h3>
+        <a class="details-pill" href="#/team/${slugOf(name)}">More details <span aria-hidden="true">→</span></a>
+        <button type="button" class="dialog-close" aria-label="Close">×</button>
+      </div>
       ${verdict ? `<p class="luck-verdict ${paid}">${verdict}</p>` : ""}
       <dl class="luck-nums">
         <div class="actual"><dt>Actual</dt><dd>${l.actual}</dd></div>
@@ -150,6 +161,7 @@ function showLuck(name) {
       <ul class="luck-games">${games}</ul>
     </div>`;
   dlg.querySelector(".dialog-close").addEventListener("click", () => dlg.close());
+  dlg.querySelector(".details-pill").addEventListener("click", () => dlg.close()); // the link opens the team page
   for (const b of dlg.querySelectorAll(".game-head")) {
     b.addEventListener("click", () => {
       const open = b.getAttribute("aria-expanded") !== "true";
@@ -166,7 +178,7 @@ function cellHtml(cell, maxPerCat) {
   const { cat: c, cls = "" } = cell.column.columnDef.meta;
   if (cell.column.id === "rank") return `<td class="${cls}">${r.rank}</td>`;
   if (cell.column.id === "team")
-    return `<td class="${cls}${r.logo ? " has-logo" : ""}" title="${esc(r.name)}"><a class="team-link" href="#/team/${slugOf(r.name)}">${logoHtml(r)}<strong><span class="full">${esc(r.name)}</span><span class="abbr">${esc(abbrOf(r.name))}</span></strong></a></td>`;
+    return `<td class="${cls}${r.logo ? " has-logo" : ""}" title="${esc(r.name)}"><span class="team-link">${logoHtml(r)}<strong><span class="full">${esc(r.name)}</span><span class="abbr">${esc(abbrOf(r.name))}</span></strong></span></td>`;
   if (cell.column.id === "score") return scoreCellHtml(r, cls);
 
   const p = r.points[c.key];
@@ -232,13 +244,17 @@ function render() {
 
   const head = table.getHeaderGroups().map((g) => `<tr>${g.headers.map(headerHtml).join("")}</tr>`).join("");
   const body = table.getRowModel().rows
-    .map((row) => `<tr>${row.getVisibleCells().map((cell) => cellHtml(cell, maxPerCat)).join("")}</tr>`)
+    .map((row) => `<tr class="team-row" data-team="${esc(row.original.name)}" tabindex="0">${row.getVisibleCells().map((cell) => cellHtml(cell, maxPerCat)).join("")}</tr>`)
     .join("");
 
   $("#board").innerHTML = `<div class="table-wrap"><table class="board${week === ALL ? " totals" : ""}${expanded.size ? " wide" : ""}${rows.some((r) => r.logo) ? " logos" : ""}"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
-  $("#board").querySelector("tbody").addEventListener("click", (e) => {
-    const b = e.target.closest(".score-btn");
-    if (b) showLuck(b.dataset.team);
+  const tbody = $("#board").querySelector("tbody");
+  tbody.addEventListener("click", (e) => {
+    const tr = e.target.closest("tr[data-team]");
+    if (tr) openTeam(tr.dataset.team);
+  });
+  tbody.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.target.matches("tr[data-team]")) openTeam(e.target.dataset.team);
   });
   $("#board").querySelector("thead").addEventListener("click", (e) => {
     const t = e.target.closest("[data-toggle]");
@@ -255,7 +271,7 @@ function render() {
   const info = [
     `Each category gives ${config.pointsWin} points for every team you beat and ${config.pointsTie} for every tie (max ${maxPerCat} per category, ${maxScore} total).`,
     "A team with a value in a category beats a team without one, and two teams without a value tie.",
-    `Score is <span class="underpaid">red</span> when a team's real matchup paid it at least ${config.luckThreshold} points less than its week was worth, and <span class="overpaid">green</span> when it paid at least ${config.luckThreshold} more${week === ALL ? " (per week, over the weeks with known matchups)" : ""}. Actual is the matchup result (${config.pointsWin} per category won, ${config.pointsTie} per tie); worth is Score divided by ${rows.length - 1}, what the week would earn against an average team. Tap a Score to see both.`,
+    `Score is <span class="underpaid">red</span> when a team's real matchup paid it at least ${config.luckThreshold} points less than its week was worth, and <span class="overpaid">green</span> when it paid at least ${config.luckThreshold} more${week === ALL ? " (per week, over the weeks with known matchups)" : ""}. Actual is the matchup result (${config.pointsWin} per category won, ${config.pointsTie} per tie); worth is Score divided by ${rows.length - 1}, what the week would earn against an average team. Tap a team's row to see both, with its matchups.`,
     luck.size ? "" : `The matchups for ${week === ALL ? "these weeks" : esc(week)} aren't in the data yet, so no Score is coloured.`,
   ].filter(Boolean);
   $("#notes").innerHTML = infoHtml(info, fetched ? `Data fetched ${esc(fetched)}.` : "");

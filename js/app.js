@@ -12,7 +12,7 @@ let week;
 let showRank = false;
 let sorting = [{ id: "score", desc: true }]; // click a column header to sort by it
 let showHeat = readPref("heatmap", true);
-let infoOpen = false; // "More information" under the table stays open across re-renders
+let infoOpen = false; // the (i) notes under the table stay open across re-renders
 const expanded = new Set(); // categories whose `toggledBy` columns are showing
 
 // Per-viewer display preferences; storage can be unavailable, so fall back quietly.
@@ -46,6 +46,22 @@ function fmtValue(v, cat) {
   if (v == null) return "–";
   if (cat.format === "pct") return v >= 1 ? "1.00" : v.toFixed(3).replace(/^0/, "");
   return String(v);
+}
+
+// "More information": an (i) button that opens the notes below it, with `lead` (when the data
+// was fetched) on the same row after a divider.
+function infoHtml(info, lead = "") {
+  return `<div class="info-row"><button type="button" class="info-btn" aria-expanded="${infoOpen}" aria-label="More information" title="More information">i</button>${lead ? `<span class="info-sep" aria-hidden="true"></span><p>${lead}</p>` : ""}</div>
+    <div class="info"${infoOpen ? "" : " hidden"}>${info.map((n) => `<p>${n}</p>`).join("")}</div>`;
+}
+
+function bindInfo(el) {
+  const btn = el.querySelector(".info-btn");
+  btn.addEventListener("click", () => {
+    infoOpen = !infoOpen;
+    btn.setAttribute("aria-expanded", infoOpen);
+    el.querySelector(".info").hidden = !infoOpen;
+  });
 }
 
 function headerHtml(h) {
@@ -155,9 +171,8 @@ function render() {
     `Each category gives ${config.pointsWin} points for every team you beat and ${config.pointsTie} for every tie (max ${maxPerCat} per category, ${maxScore} total).`,
     "A team with a value in a category beats a team without one, and two teams without a value tie.",
   ].filter(Boolean);
-  $("#notes").innerHTML = `${fetched ? `<p>Data fetched ${esc(fetched)}.</p>` : ""}
-    <details${infoOpen ? " open" : ""}><summary>More information</summary>${info.map((n) => `<p>${n}</p>`).join("")}</details>`;
-  $("#notes details").addEventListener("toggle", (e) => { infoOpen = e.target.open; });
+  $("#notes").innerHTML = infoHtml(info, fetched ? `Data fetched ${esc(fetched)}.` : "");
+  bindInfo($("#notes"));
 }
 
 // ---- Team page (#/team/<slug>) ----
@@ -394,8 +409,8 @@ function renderPlayers() {
     `Skaters on every team's roster with at least ${minGp} GP ${week === ALL ? "over all weeks" : "that week"} take part: ${rows.length} players.`,
     weeksWithoutGp.length ? `Not counted: ${esc(listOf(weeksWithoutGp))}, exported without GP.` : "",
   ].filter(Boolean);
-  $("#player-notes").innerHTML = `<details${infoOpen ? " open" : ""}><summary>More information</summary>${info.map((n) => `<p>${n}</p>`).join("")}</details>`;
-  $("#player-notes details").addEventListener("toggle", (e) => { infoOpen = e.target.open; });
+  $("#player-notes").innerHTML = infoHtml(info);
+  bindInfo($("#player-notes"));
 }
 
 let boardScroll = 0;

@@ -378,15 +378,14 @@ function renderPlayers() {
   document.title = `${title} · ${config.leagueName}`;
 
   // One card per player: rank, owner's logo, name and NHL team on top, then a 4-column grid with
-  // P (G+A) and the categories, each box showing the total and the average per game. Score only
-  // orders the list; it's in the name row's tooltip. P isn't part of Score, so it gets no heat.
+  // GP and the categories, each category showing the total and the average per game. Score only
+  // orders the list; it's in the name row's tooltip.
   const cards = top.map((r) => {
-    const cells = [{ key: "p", label: "P" }, ...SKATER_CATS].map((c) => {
-      const total = c.key === "p" ? r.points : r.totals[c.key];
+    const cells = SKATER_CATS.map((c) => {
+      const total = r.totals[c.key];
       const leads = rows.every((o) => o.perGp[c.key] <= r.perGp[c.key]);
-      const scored = c.key in r.z;
-      const heat = showHeat && scored ? ` style="--heat:${Math.round(r.heat[c.key] * 100)}%"` : "";
-      const tip = `${total} in ${r.gp} GP (${perGame(r.perGp[c.key])} per game)${scored ? ` · ${signed(r.z[c.key])} vs average` : ""}`;
+      const heat = showHeat ? ` style="--heat:${Math.round(r.heat[c.key] * 100)}%"` : "";
+      const tip = `${total} in ${r.gp} GP (${perGame(r.perGp[c.key])} per game) · ${signed(r.z[c.key])} vs average`;
       return `<div class="${[heat ? "heat" : "", leads ? "lead" : ""].filter(Boolean).join(" ")}"${heat} title="${esc(tip)}"><dt>${esc(c.label)}</dt><dd>${total}<span class="avg">${perGame(r.perGp[c.key])}</span></dd></div>`;
     }).join("");
     const team = r.team;
@@ -394,8 +393,8 @@ function renderPlayers() {
       ? `<span class="owner${team.logo ? " has-logo" : ""}" title="${esc(team.name)}">${team.logo ? logoHtml(team) : ""}<span class="owner-abbr">${esc(abbrOf(team.name))}</span></span>`
       : "";
     return `<article class="player-card">
-      <p class="name-row" title="Score ${signed(r.score)}"><span class="player-rank">${r.rank}</span>${owner}<strong>${esc(r.player)}</strong><span class="player-meta">${esc([r.nhl, `${r.gp} GP`].filter(Boolean).join(" · "))}</span></p>
-      <dl class="player-stats">${cells}</dl>
+      <p class="name-row" title="Score ${signed(r.score)}"><span class="player-rank">${r.rank}</span>${owner}<strong>${esc(r.player)}</strong>${r.nhl ? `<span class="player-meta">${esc(r.nhl)}</span>` : ""}</p>
+      <dl class="player-stats"><div class="gp"><dt>GP</dt><dd>${r.gp}</dd></div>${cells}</dl>
     </article>`;
   }).join("");
 
@@ -404,7 +403,7 @@ function renderPlayers() {
     : `<p class="empty">No skater has ${minGp} games played ${week === ALL ? "yet" : `in ${esc(week)}`}.</p>`;
 
   const info = [
-    `Each box shows the player's ${week === ALL ? "total over all weeks" : "total for the week"}, and under it that total divided by his games played (GP). P is G + A.`,
+    `Each box shows the player's ${week === ALL ? "total over all weeks" : "total for the week"}, and under it that total divided by his games played (GP).`,
     "Players are ranked by how far above average they are: in each category a player's value is compared with the average of everyone taking part, measured in standard deviations (+1.0 is well above average, 0 is average), and the seven categories are added up. A big lead counts for more than a narrow one.",
     `Skaters on every team's roster with at least ${minGp} GP ${week === ALL ? "over all weeks" : "that week"} take part: ${rows.length} players.`,
     weeksWithoutGp.length ? `Not counted: ${esc(listOf(weeksWithoutGp))}, exported without GP.` : "",

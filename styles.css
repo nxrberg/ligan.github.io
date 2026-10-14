@@ -80,15 +80,20 @@ h2 { margin: 4px 0 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.14
 .switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
 .notes { color: var(--muted); font-size: 11px; margin-top: 12px; }
 .notes p { margin: 4px 0; }
-.notes summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none; margin-top: 14px; color: var(--muted); }
-.notes summary:hover { color: var(--text); }
-.notes summary::-webkit-details-marker { display: none; }
-.notes summary::after {
-  content: ""; width: 6px; height: 6px; margin-top: -2px;
-  border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
-  transform: rotate(-45deg); transition: transform 0.15s;
+/* "More information" as a round (i) button, with "Data fetched" beside it after a thin divider */
+.info-row { display: flex; align-items: center; gap: 8px; }
+.info-row p { margin: 0; }
+.info-btn {
+  position: relative; flex: none; display: grid; place-items: center; width: 18px; height: 18px; padding: 0;
+  border: 1px solid currentColor; border-radius: 50%; background: none; color: var(--muted); cursor: pointer;
+  font: inherit; font-size: 11px; font-weight: 700; line-height: 1;
 }
-.notes details[open] summary::after { transform: rotate(45deg); margin-top: -4px; }
+.info-btn::before { content: ""; position: absolute; inset: -8px; } /* a bigger tap target */
+.info-btn:hover { color: var(--text); }
+.info-btn[aria-expanded="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.info-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.info-sep { flex: none; width: 1px; height: 12px; background: var(--faint); }
+.info { margin-top: 8px; }
 
 /* Leaderboard table */
 .table-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }

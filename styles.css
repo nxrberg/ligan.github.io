@@ -89,7 +89,7 @@ h2 { margin: 4px 0 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.14
 .notes p { margin: 4px 0; }
 /* "More information" as a round (i) button, with "Data fetched" beside it after a thin divider */
 .info-row { display: flex; align-items: center; gap: 8px; }
-.info-row p { margin: 0; }
+.info-row p { margin: 0; font-size: 9px; } /* "Data fetched", two steps below the notes */
 .info-btn {
   position: relative; flex: none; display: grid; place-items: center; width: 18px; height: 18px; padding: 0;
   border: 1px solid currentColor; border-radius: 50%; background: none; color: var(--muted); cursor: pointer;

@@ -146,16 +146,35 @@ td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend 
 .dialog-close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 20px; line-height: 1; cursor: pointer; }
 .dialog-close:hover { background: var(--chip); color: var(--text); }
 .dialog h3 { margin: 0 36px 2px 0; font-size: 15px; }
-.luck-verdict { margin: 0 0 12px; font-size: 12px; color: var(--muted); }
+/* Verdict as a tinted pill with a dot; only shown when the Score is coloured */
+.luck-verdict { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 12px; padding: 3px 10px 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.luck-verdict::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.luck-verdict.underpaid { background: color-mix(in srgb, var(--underpaid) 14%, transparent); }
+.luck-verdict.overpaid { background: color-mix(in srgb, var(--overpaid) 14%, transparent); }
+.dialog h3 + .luck-nums { margin-top: 12px; }
+/* Each number has a coloured bar on top: Actual blue, Worth grey, Gap red/green (grey when even) */
 .luck-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 0 0 12px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-.luck-nums div { background: var(--panel); padding: 8px 0; text-align: center; }
+.luck-nums div { --bar: var(--faint); background: var(--panel); padding: 8px 0; text-align: center; box-shadow: inset 0 3px 0 var(--bar); }
+.luck-nums .actual { --bar: var(--accent); }
+.luck-nums .gap { --bar: var(--muted); }
+.luck-nums .gap.underpaid { --bar: var(--underpaid); background: color-mix(in srgb, var(--underpaid) 8%, var(--panel)); }
+.luck-nums .gap.overpaid { --bar: var(--overpaid); background: color-mix(in srgb, var(--overpaid) 8%, var(--panel)); }
 .luck-nums dt { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
 .luck-nums dd { margin: 2px 0 0; font-family: var(--num-font); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.luck-games { list-style: none; margin: 0 0 12px; padding: 0; font-size: 12px; }
-.luck-games li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; padding: 6px 0; border-top: 1px solid var(--line); }
+.luck-nums .actual dd { color: var(--accent); }
+/* Games: a block before each in that game's own colour, the week as a chip, wins green and losses red */
+.luck-games { list-style: none; margin: 0; padding: 0; font-size: 12px; }
+.luck-games li { --block: var(--faint); position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; padding: 7px 0 7px 12px; border-top: 1px solid var(--line); }
+.luck-games li::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 4px; border-radius: 2px; background: var(--block); }
+.luck-games li.underpaid { --block: var(--underpaid); color: var(--text); }
+.luck-games li.overpaid { --block: var(--overpaid); color: var(--text); }
 .luck-games li:last-child { border-bottom: 1px solid var(--line); }
+.luck-week { display: inline-block; padding: 0 5px; border-radius: 4px; background: var(--chip); font-size: 11px; }
 .luck-rec { color: var(--muted); font-family: var(--num-font); }
-.luck-explain { margin: 0; font-size: 11px; color: var(--muted); }
+.luck-rec b { font-weight: 600; color: var(--text); }
+.luck-rec .won { color: var(--overpaid); }
+.luck-rec .lost { color: var(--underpaid); }
+.luck-rec .tied { color: var(--muted); }
 .board td.heat { --heat-c: color-mix(in srgb, var(--accent) calc(var(--heat) * 0.4), transparent); background-image: linear-gradient(var(--heat-c), var(--heat-c)); }
 .board .unscored { color: var(--muted); }
 /* Category leaders get a dotted box, drawn as a border on a layer inside the cell so the layout doesn't shift

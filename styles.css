@@ -106,7 +106,7 @@ tbody tr:nth-child(even) td { background-color: var(--zebra); }
 tbody tr:hover td { background-color: var(--head); }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 /* Numbers are set in Roboto Mono, half a pixel under the text around them; headers, names and labels stay in IBM Plex Mono. */
-td.num, .star-stats dd, .cat-value, .board.players .player-rank, .cat-legend .wins { font-family: var(--num-font); }
+td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend .wins { font-family: var(--num-font); }
 .board td.num { font-size: calc(1em - 0.5px); }
 
 /* Mobile first: small type and tight cells so all 10 categories fit a phone; the overall #
@@ -133,9 +133,9 @@ td.num, .star-stats dd, .cat-value, .board.players .player-rank, .cat-legend .wi
 .board .unscored { color: var(--muted); }
 /* Category leaders get a dotted box, drawn as a border on a layer inside the cell so the layout doesn't shift
    (an outline on a table cell loses its sides in some iOS Safari versions) */
-.board td.lead { position: relative; }
-.board td.lead::after { content: ""; position: absolute; inset: 0; border: 2px dotted #000; border-radius: 3px; pointer-events: none; }
-@media (prefers-color-scheme: dark) { .board td.lead::after { border-color: var(--text); } }
+.board td.lead, .player-stats .lead { position: relative; }
+.board td.lead::after, .player-stats .lead::after { content: ""; position: absolute; inset: 0; border: 2px dotted #000; border-radius: 3px; pointer-events: none; }
+@media (prefers-color-scheme: dark) { .board td.lead::after, .player-stats .lead::after { border-color: var(--text); } }
 .board .inf { font-weight: 400; }
 .board th.sortable, .board th.toggles { cursor: pointer; user-select: none; }
 .board th.sortable:hover, .board th.toggles:hover, .board th.sorted { color: var(--text); }
@@ -238,30 +238,33 @@ td.num, .star-stats dd, .cat-value, .board.players .player-rank, .cat-legend .wi
 }
 .page-link:hover { text-decoration: underline; }
 
-/* Veckans guldgossar: the 10 best skaters, per-GP values in the leaderboard's table style.
-   Each player is a <tbody> of two rows: name row (spans the table), then the stat row. */
+/* Veckans guldgossar: the 10 best skaters as cards, one column on phones and two on wide screens.
+   Each card has the name row on top and a 4-column grid of stat boxes (title, total, per-game average). */
 #players-view .week-tabs { margin-top: 4px; }
-.board.players .player-block tr td { background-color: transparent; }
-.board.players .player-block:nth-of-type(even) td { background-color: var(--zebra); }
-.board.players .player-block:hover td { background-color: var(--head); }
-.board.players .player-block:last-child .stat-row td { border-bottom: 0; }
-.board.players .name-row td { border-bottom: 0; padding: 9px 6px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.board.players .name-row td > * { vertical-align: middle; }
-.board.players .stat-row td { padding-top: 6px; }
-.board.players .player-rank { display: inline-block; min-width: 1.6em; color: var(--muted); font-variant-numeric: tabular-nums; }
-.board.players .owner { display: inline-block; margin-right: 8px; }
-.board.players .owner .logo { display: block; width: 20px; height: 20px; }
-.board.players .owner.has-logo .owner-abbr { display: none; }
-.board.players .owner-abbr { font-size: 0.85em; font-weight: 600; color: var(--muted); }
-.board.players .name-row strong { font-size: 1.1em; }
-.board.players .player-meta { margin-left: 8px; font-size: 0.9em; color: var(--muted); }
-@media (min-width: 480px) {
-  .board.players .name-row td { padding: 12px 8px 2px; }
-  .board.players .owner .logo { width: 24px; height: 24px; }
-}
+.player-cards { display: grid; gap: 10px; }
+.player-card { border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: var(--panel); min-width: 0; }
+.player-card .name-row { display: flex; align-items: center; margin: 0 0 8px; font-size: 12px; white-space: nowrap; overflow: hidden; }
+.player-card .name-row strong { overflow: hidden; text-overflow: ellipsis; }
+.player-rank { flex: none; min-width: 1.8em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.player-card .owner { flex: none; display: inline-block; margin-right: 8px; }
+.player-card .owner .logo { display: block; width: 22px; height: 22px; border-radius: 5px; object-fit: cover; background: var(--chip); }
+.player-card .owner.has-logo .owner-abbr { display: none; }
+.player-card .owner-abbr { font-size: 0.85em; font-weight: 600; color: var(--muted); }
+.player-meta { flex: none; margin-left: 8px; font-size: 0.85em; color: var(--muted); }
+.player-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin: 0; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.player-stats div { background-color: var(--panel); padding: 5px 0 6px; text-align: center; }
+.player-stats .heat { --heat-c: color-mix(in srgb, var(--accent) calc(var(--heat) * 0.4), transparent); background-image: linear-gradient(var(--heat-c), var(--heat-c)); }
+.player-stats dt { font-size: 9px; color: var(--muted); letter-spacing: 0.04em; }
+.player-stats dd { margin: 2px 0 0; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.player-stats .avg { display: block; margin-top: 1px; font-size: 9.5px; font-weight: 400; color: var(--muted); }
 @media (min-width: 760px) {
-  .board.players .name-row td { padding: 14px 12px 2px; }
-  .board.players .owner .logo { width: 28px; height: 28px; margin: 0; }
+  .player-cards { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .player-card { padding: 14px; }
+  .player-card .name-row { font-size: 14px; margin-bottom: 10px; }
+  .player-card .owner .logo { width: 28px; height: 28px; }
+  .player-stats dt { font-size: 10px; }
+  .player-stats dd { font-size: 15px; }
+  .player-stats .avg { font-size: 11px; }
 }
 
 /* Team page: one bar per category against the league average and best */

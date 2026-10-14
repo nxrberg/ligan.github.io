@@ -77,8 +77,9 @@ function cellHtml(cell, maxPerCat) {
   const heat = showHeat && c.scored && p != null ? p / maxPerCat : null;
   const style = heat == null ? "" : ` style="--heat:${Math.round(heat * 100)}%"`;
   const rk = r.ranks[c.key];
-  const lead = c.scored && rk?.rank === 1;
   const v = r.values[c.key];
+  // No box for a 0 SHO lead: nobody has a shutout yet.
+  const lead = c.scored && rk?.rank === 1 && !(c.key === "sho" && v === 0);
   // A perfect SV% shows as a regular-weight ∞ instead of 1.00.
   const text = showRank && c.scored ? (rk ? rk.rank : "–")
     : c.format === "pct" && v >= 1 ? `<span class="inf">∞</span>` : fmtValue(v, c);

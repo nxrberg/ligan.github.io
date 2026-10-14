@@ -96,7 +96,10 @@ function scoreCellHtml(r, cls) {
 }
 
 // The dialog behind a Score: Actual, Worth and the gap, then each known matchup (opponent,
-// category record, points) so the numbers can be checked.
+// category record, points) so the numbers can be checked. Colour carries the reading: the verdict
+// is a red or green pill (none when the week was about what it was worth), each number has a
+// coloured bar on top, and each game has a block in its own over/underpaid colour, with wins green
+// and losses red in its record.
 function showLuck(name) {
   const l = luck.get(name);
   if (!l) return;
@@ -104,22 +107,22 @@ function showLuck(name) {
   const paid = paidOf(gap);
   const perWeek = l.weeks > 1 ? " per week" : "";
   const verdict = paid === "underpaid" ? `Underpaid by ${(-gap).toFixed(1)}${perWeek}`
-    : paid === "overpaid" ? `Overpaid by ${gap.toFixed(1)}${perWeek}`
-    : `About what the week${l.weeks > 1 ? "s were" : " was"} worth`;
-  const games = l.games.map((g) => `<li><span>${esc(g.week)} vs <strong>${esc(g.opponent)}</strong></span><span class="luck-rec">${g.won}–${g.lost}–${g.tied} · ${g.actual} pts · worth ${g.worth.toFixed(1)}</span></li>`).join("");
-  const others = data.teams.length - 1;
+    : paid === "overpaid" ? `Overpaid by ${gap.toFixed(1)}${perWeek}` : "";
+  const games = l.games.map((g) => `<li class="${paidOf(g.actual - g.worth)}">
+      <span><span class="luck-week">${esc(g.week)}</span> vs <strong>${esc(g.opponent)}</strong></span>
+      <span class="luck-rec"><b class="won">${g.won}</b>–<b class="lost">${g.lost}</b>–<b class="tied">${g.tied}</b> · <b>${g.actual}</b> pts · worth ${g.worth.toFixed(1)}</span>
+    </li>`).join("");
   const dlg = $("#luck-dialog");
   dlg.innerHTML = `<div class="dialog-body">
       <button type="button" class="dialog-close" aria-label="Close">×</button>
       <h3>${esc(name)}</h3>
-      <p class="luck-verdict${paid ? ` ${paid}` : ""}">${verdict}</p>
+      ${verdict ? `<p class="luck-verdict ${paid}">${verdict}</p>` : ""}
       <dl class="luck-nums">
-        <div><dt>Actual</dt><dd>${l.actual}</dd></div>
-        <div><dt>Worth</dt><dd>${l.worth.toFixed(1)}</dd></div>
-        <div class="${paid}"><dt>Gap</dt><dd>${signed(l.actual - l.worth)}</dd></div>
+        <div class="actual"><dt>Actual</dt><dd>${l.actual}</dd></div>
+        <div class="worth"><dt>Worth</dt><dd>${l.worth.toFixed(1)}</dd></div>
+        <div class="gap ${paid}"><dt>Gap</dt><dd>${signed(l.actual - l.worth)}</dd></div>
       </dl>
       <ul class="luck-games">${games}</ul>
-      <p class="luck-explain">Actual is the matchup result: ${config.pointsWin} per category won, ${config.pointsTie} per tie (record is won–lost–tied). Worth is the week's Score divided by ${others}, what it would earn against an average team. Coloured at a gap of ${config.luckThreshold} or more${l.weeks > 1 ? " per week" : ""}.</p>
     </div>`;
   dlg.querySelector(".dialog-close").addEventListener("click", () => dlg.close());
   dlg.onclick = (e) => { if (e.target === dlg) dlg.close(); }; // a tap on the backdrop closes it

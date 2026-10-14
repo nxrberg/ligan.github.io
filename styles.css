@@ -148,6 +148,21 @@ td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend 
 /* Actual vs Worth dialog */
 .dialog { width: min(360px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--text); }
 .dialog::backdrop { background: rgb(0 0 0 / 0.45); }
+/* On phones the dialog is a bottom sheet (js/sheet.js): full width, rounded top corners, a grab
+   handle, sliding up from the bottom and swiped down to close. --sheet-fade dims the backdrop as it
+   goes (browsers whose backdrop can't read it keep the plain dim). */
+.sheet-handle { display: none; }
+html.sheet-lock { overflow: hidden; }
+@media (max-width: 759px) {
+  .dialog {
+    width: 100%; max-width: none; max-height: 85dvh; margin: auto 0 0; overflow-y: auto; overscroll-behavior: contain;
+    border-width: 1px 0 0; border-radius: 16px 16px 0 0; padding-bottom: env(safe-area-inset-bottom);
+  }
+  .dialog::backdrop { background: rgb(0 0 0 / calc(0.45 * var(--sheet-fade, 1))); transition: background 0.3s; }
+  .sheet-handle { display: block; position: sticky; top: 0; z-index: 1; height: 20px; margin-bottom: -6px; background: var(--panel); cursor: grab; }
+  .sheet-handle::before { content: ""; position: absolute; left: 50%; top: 8px; width: 36px; height: 5px; margin-left: -18px; border-radius: 3px; background: var(--faint); }
+  .dialog-body { padding-top: 10px; }
+}
 .dialog-body { position: relative; padding: 18px 16px 16px; }
 .dialog-close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 20px; line-height: 1; cursor: pointer; }
 .dialog-close:hover { background: var(--chip); color: var(--text); }

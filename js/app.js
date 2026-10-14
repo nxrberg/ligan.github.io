@@ -87,13 +87,11 @@ function headerHtml(h) {
 const gapOf = (l) => (l.actual - l.worth) / l.weeks;
 const paidOf = (gap) => (gap >= config.luckThreshold ? "overpaid" : gap <= -config.luckThreshold ? "underpaid" : "");
 
-// Score, coloured by paidOf. With a known matchup it's underlined dotted: the row opens the Actual
-// vs Worth dialog.
+// Score, coloured by paidOf when the matchup is known (the row opens the Actual vs Worth dialog).
 function scoreCellHtml(r, cls) {
   const l = luck.get(r.name);
-  if (!l) return `<td class="${cls}"><strong>${r.score}</strong></td>`;
-  const paid = paidOf(gapOf(l));
-  return `<td class="${cls}${paid ? ` ${paid}` : ""}"><strong class="score-link">${r.score}</strong></td>`;
+  const paid = l ? paidOf(gapOf(l)) : "";
+  return `<td class="${cls}${paid ? ` ${paid}` : ""}"><strong>${r.score}</strong></td>`;
 }
 
 // A click (or Enter) on a leaderboard row opens the team's Actual vs Worth dialog; without a known

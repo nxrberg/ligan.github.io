@@ -48,6 +48,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 12px 6px 48px; }
 
 h2 { margin: 4px 0 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; text-align: center; }
 @media (min-width: 480px) { h2 { margin: 0 0 20px; font-size: 14px; letter-spacing: 0.18em; } }
+#board-view > h2 { margin-bottom: 26px; }
+@media (min-width: 480px) { #board-view > h2 { margin-bottom: 32px; } }
 /* The leaderboard title is a button that reloads the page (for the site saved as a home-screen app) */
 .title-reload { padding: 0; border: 0; background: none; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .title-reload:active { opacity: 0.5; }
@@ -55,12 +57,12 @@ h2 { margin: 4px 0 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.14
 .status { margin: 0 0 12px; padding: 8px 12px; border-radius: 10px; background: var(--head); border: 1px dashed var(--line); color: var(--muted); font-size: 12px; }
 
 /* Week tabs: outlined uppercase buttons, the selected one filled with the accent */
-.week-tabs { display: flex; gap: 6px; overflow-x: auto; margin: 0 0 12px; scrollbar-width: none; }
+.week-tabs { display: flex; gap: 4px; overflow-x: auto; margin: 0 0 12px; scrollbar-width: none; }
 .week-tabs::-webkit-scrollbar { display: none; }
 .week-tabs button {
-  flex: none; font: inherit; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
-  padding: 8px 12px; cursor: pointer; white-space: nowrap;
+  flex: none; font: inherit; font-size: 8px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  padding: 6px 8px; cursor: pointer; white-space: nowrap;
 }
 .week-tabs button:hover { color: var(--text); }
 .week-tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
@@ -139,11 +141,9 @@ td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend 
 /* Matchup luck: red when the real matchup paid much less than the week was worth, green when much more */
 .board td.score.underpaid, .notes .underpaid, .dialog .underpaid { color: var(--underpaid); }
 .board td.score.overpaid, .notes .overpaid, .dialog .overpaid { color: var(--overpaid); }
-/* Leaderboard rows open the team's Actual vs Worth dialog (or the team page without a known matchup);
-   a Score with a dialog behind it is underlined dotted */
+/* Leaderboard rows open the team's Actual vs Worth dialog (or the team page without a known matchup) */
 .board tbody tr.team-row { cursor: pointer; }
 .board tbody tr.team-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.score-link { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 
 /* Actual vs Worth dialog */
 .dialog { width: min(360px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--text); }

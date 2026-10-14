@@ -149,7 +149,7 @@ function showLuck(name) {
   dlg.innerHTML = `<div class="dialog-body">
       <div class="dialog-head">
         <h3>${esc(name)}</h3>
-        <a class="details-pill" href="#/team/${slugOf(name)}">More details <span aria-hidden="true">→</span></a>
+        <a class="details-link" href="#/team/${slugOf(name)}">More details <span aria-hidden="true">→</span></a>
         <button type="button" class="dialog-close" aria-label="Close">×</button>
       </div>
       ${verdict ? `<p class="luck-verdict ${paid}">${verdict}</p>` : ""}
@@ -161,7 +161,7 @@ function showLuck(name) {
       <ul class="luck-games">${games}</ul>
     </div>`;
   dlg.querySelector(".dialog-close").addEventListener("click", () => dlg.close());
-  dlg.querySelector(".details-pill").addEventListener("click", () => dlg.close()); // the link opens the team page
+  dlg.querySelector(".details-link").addEventListener("click", () => dlg.close()); // the link opens the team page
   for (const b of dlg.querySelectorAll(".game-head")) {
     b.addEventListener("click", () => {
       const open = b.getAttribute("aria-expanded") !== "true";

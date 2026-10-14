@@ -12,6 +12,7 @@
   --accent: #5aa0c2;
   --on-accent: #0f2733;
   --lead: #d4a017;
+  --num-font: "Roboto Mono", ui-monospace, monospace;
   --compare: #d9735b;
   color-scheme: light dark;
 }
@@ -28,8 +29,8 @@
 @media (max-width: 759px) { html { zoom: 1.25; } }
 @media (max-width: 379px) { html { zoom: 1.15; } } /* the smallest phones need the room */
 /* SV% values are the widest, so they stay at their unzoomed size on phones. */
-@media (max-width: 759px) { .board td.pct { font-size: 0.8em; } .board td.pct .inf { font-size: 1.25em; } }
-@media (max-width: 379px) { .board td.pct { font-size: 0.87em; } }
+@media (max-width: 759px) { .board td.num.pct { font-size: 0.76em; } .board td.pct .inf { font-size: 1.25em; } }
+@media (max-width: 379px) { .board td.num.pct { font-size: 0.83em; } }
 body {
   margin: 0;
   -webkit-text-size-adjust: 100%;
@@ -88,6 +89,9 @@ tbody tr:last-child td { border-bottom: 0; }
 tbody tr:nth-child(even) td { background-color: var(--zebra); }
 tbody tr:hover td { background-color: var(--head); }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
+/* Numbers are set in Roboto Mono, half a pixel under the text around them; headers, names and labels stay in IBM Plex Mono. */
+td.num, .star-stats dd, .cat-value, .board.players .player-rank, .cat-legend .wins { font-family: var(--num-font); }
+.board td.num { font-size: calc(1em - 0.5px); }
 
 /* Mobile first: small type and tight cells so all 10 categories fit a phone; the overall #
    column and full team names come back as the screen grows. */
@@ -107,11 +111,12 @@ tbody tr:hover td { background-color: var(--head); }
 .board .logo { display: block; width: 22px; height: 22px; border-radius: 5px; object-fit: cover; background: var(--chip); }
 .board td.has-logo .abbr { display: none; }
 .board .col-rank { display: none; }
-.board td.score { font-weight: 700; font-size: 11.5px; background-image: linear-gradient(color-mix(in srgb, var(--chip) 45%, transparent), color-mix(in srgb, var(--chip) 45%, transparent)); }
+.board td.score { font-weight: 700; font-size: 11px; background-image: linear-gradient(color-mix(in srgb, var(--chip) 45%, transparent), color-mix(in srgb, var(--chip) 45%, transparent)); }
 .board th.score { width: 4em; }
 .board td.heat { --heat-c: color-mix(in srgb, var(--accent) calc(var(--heat) * 0.4), transparent); background-image: linear-gradient(var(--heat-c), var(--heat-c)); }
 .board .unscored { color: var(--muted); }
-.board td.lead { font-weight: 700; }
+/* Category leaders get a dotted box; an outline, so the layout doesn't shift */
+.board td.lead { outline: 2px dotted var(--lead); outline-offset: -3px; border-radius: 3px; }
 .board .inf { font-weight: 400; }
 .board th.sortable, .board th.toggles { cursor: pointer; user-select: none; }
 .board th.sortable:hover, .board th.toggles:hover, .board th.sorted { color: var(--text); }
@@ -145,7 +150,7 @@ tbody tr:hover td { background-color: var(--head); }
   .board .team strong { vertical-align: middle; }
   .board.logos td.team:not(.has-logo) strong { margin-left: 40px; } /* line names up when a logo is missing */
   .board th.team { width: 18.5em; }
-  .board td.score { font-size: 15px; }
+  .board td.score { font-size: 14.5px; }
   .board th.score { width: 6.5em; }
   .board td.lead::before { content: "★ "; color: var(--lead); font-size: 11px; }
 }
@@ -191,7 +196,7 @@ tbody tr:hover td { background-color: var(--head); }
 .star-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin: 0; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .star-stats div { background: var(--panel); padding: 6px 0; text-align: center; }
 .star-stats dt { font-size: 9px; color: var(--muted); letter-spacing: 0.04em; }
-.star-stats dd { margin: 2px 0 0; font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.star-stats dd { margin: 2px 0 0; font-size: 11.5px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .star-stats .key { background: color-mix(in srgb, var(--accent) 22%, var(--panel)); }
 .star-stats .key dd { font-weight: 700; }
 @media (min-width: 480px) {
@@ -202,7 +207,7 @@ tbody tr:hover td { background-color: var(--head); }
   .star-card { padding: 16px; }
   .star-card h3 { font-size: 16px; }
   .star-stats dt { font-size: 10px; }
-  .star-stats dd { font-size: 14px; }
+  .star-stats dd { font-size: 13.5px; }
   .hero-logo { width: 90px; height: 90px; }
   .hero h1 { font-size: 22px; }
 }
@@ -251,7 +256,7 @@ tbody tr:hover td { background-color: var(--head); }
 .key-mark.best, .cat-mark.best { background: var(--lead); }
 .cat-cols { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
 .cat-col { display: flex; flex-direction: column; align-items: stretch; text-align: center; min-width: 0; }
-.cat-value { font-size: 10.5px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; white-space: nowrap; }
+.cat-value { font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; white-space: nowrap; }
 .cat-rank { font-size: 9px; color: var(--muted); min-height: 1.4em; }
 .cat-track { position: relative; height: 140px; margin: 4px 2px 6px; background: var(--chip); border-radius: 3px; }
 .cat-bar { position: absolute; left: 0; right: 0; bottom: 0; background: var(--accent); border-radius: 3px; }
@@ -282,7 +287,7 @@ tbody tr:hover td { background-color: var(--head); }
   .cat-track { height: 220px; margin: 6px 8px 8px; }
   .cat-mark { left: -5px; right: -5px; }
   .cat-label { font-size: 12px; letter-spacing: 0.06em; }
-  .cat-value { font-size: 14px; letter-spacing: 0; }
+  .cat-value { font-size: 13.5px; letter-spacing: 0; }
   .cat-rank { font-size: 11px; }
   .cat-legend { font-size: 12px; }
 }

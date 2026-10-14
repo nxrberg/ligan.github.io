@@ -96,10 +96,28 @@ function scoreCellHtml(r, cls) {
 }
 
 // The dialog behind a Score: Actual, Worth and the gap, then each known matchup (opponent,
-// category record, points) so the numbers can be checked. Colour carries the reading: the verdict
-// is a red or green pill (none when the week was about what it was worth), each number has a
-// coloured bar on top, and each game has a block in its own over/underpaid colour, with wins green
-// and losses red in its record.
+// category record, points), which doubles as the team's matchup history. Colour carries the
+// reading: the verdict is a red or green pill (none when the week was about what it was worth),
+// each number has a coloured bar on top, and each game has a block green for a won matchup, red
+// for a lost one (grey when level), with wins green and losses red in its record. A game's chevron
+// opens its categories side by side, the winning value tinted.
+// "win" when the team took more categories than it lost in the matchup, "loss" when fewer, "tie" otherwise.
+const gameResultOf = (g) => (g.won > g.lost ? "win" : g.won < g.lost ? "loss" : "tie");
+
+// A game's categories side by side: the team's value, the category, the opponent's value. The
+// winner of each category is tinted green when it's the team, red when it's the opponent.
+function gameCatsHtml(name, g) {
+  const side = (v, c, cls) => `<td class="${cls}">${c.format === "pct" && v >= 1 ? "∞" : fmtValue(v, c)}</td>`;
+  const rows = g.cats.map(({ cat: c, mine, theirs, points }) => {
+    const res = points === config.pointsWin ? "won" : points === config.pointsTie ? "tied" : "lost";
+    return `<tr class="${res}">${side(mine, c, "mine")}<th scope="row">${esc(c.label)}</th>${side(theirs, c, "theirs")}</tr>`;
+  }).join("");
+  return `<table class="game-cats" hidden>
+      <thead><tr><th class="mine" title="${esc(name)}">${esc(abbrOf(name))}</th><th></th><th class="theirs" title="${esc(g.opponent)}">${esc(abbrOf(g.opponent))}</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
 function showLuck(name) {
   const l = luck.get(name);
   if (!l) return;
@@ -108,9 +126,15 @@ function showLuck(name) {
   const perWeek = l.weeks > 1 ? " per week" : "";
   const verdict = paid === "underpaid" ? `Underpaid by ${(-gap).toFixed(1)}${perWeek}`
     : paid === "overpaid" ? `Overpaid by ${gap.toFixed(1)}${perWeek}` : "";
-  const games = l.games.map((g) => `<li class="${paidOf(g.actual - g.worth)}">
-      <span><span class="luck-week">${esc(g.week)}</span> vs <strong>${esc(g.opponent)}</strong></span>
-      <span class="luck-rec"><b class="won">${g.won}</b>–<b class="lost">${g.lost}</b>–<b class="tied">${g.tied}</b> · <b>${g.actual}</b> pts · worth ${g.worth.toFixed(1)}</span>
+  const games = l.games.map((g) => `<li class="${gameResultOf(g)}">
+      <button type="button" class="game-head" aria-expanded="false" title="Show categories">
+        <span class="game-main">
+          <span><span class="luck-week">${esc(g.week)}</span> vs <strong>${esc(g.opponent)}</strong></span>
+          <span class="luck-rec"><b class="won">${g.won}</b>–<b class="lost">${g.lost}</b>–<b class="tied">${g.tied}</b> · <b>${g.actual}</b> pts · worth ${g.worth.toFixed(1)}</span>
+        </span>
+        <span class="chevron" aria-hidden="true"></span>
+      </button>
+      ${gameCatsHtml(name, g)}
     </li>`).join("");
   const dlg = $("#luck-dialog");
   dlg.innerHTML = `<div class="dialog-body">
@@ -125,6 +149,13 @@ function showLuck(name) {
       <ul class="luck-games">${games}</ul>
     </div>`;
   dlg.querySelector(".dialog-close").addEventListener("click", () => dlg.close());
+  for (const b of dlg.querySelectorAll(".game-head")) {
+    b.addEventListener("click", () => {
+      const open = b.getAttribute("aria-expanded") !== "true";
+      b.setAttribute("aria-expanded", open);
+      b.nextElementSibling.hidden = !open;
+    });
+  }
   dlg.onclick = (e) => { if (e.target === dlg) dlg.close(); }; // a tap on the backdrop closes it
   dlg.showModal();
 }

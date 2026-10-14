@@ -162,13 +162,31 @@ td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend 
 .luck-nums dt { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
 .luck-nums dd { margin: 2px 0 0; font-family: var(--num-font); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .luck-nums .actual dd { color: var(--accent); }
-/* Games: a block before each in that game's own colour, the week as a chip, wins green and losses red */
+/* Games: a block before each, green for a won matchup and red for a lost one, the week as a chip,
+   wins green and losses red in the record, and a chevron that opens the categories */
 .luck-games { list-style: none; margin: 0; padding: 0; font-size: 12px; }
-.luck-games li { --block: var(--faint); position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; padding: 7px 0 7px 12px; border-top: 1px solid var(--line); }
-.luck-games li::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 4px; border-radius: 2px; background: var(--block); }
-.luck-games li.underpaid { --block: var(--underpaid); color: var(--text); }
-.luck-games li.overpaid { --block: var(--overpaid); color: var(--text); }
+.luck-games li { --block: var(--faint); border-top: 1px solid var(--line); }
+.luck-games li.win { --block: var(--overpaid); }
+.luck-games li.loss { --block: var(--underpaid); }
 .luck-games li:last-child { border-bottom: 1px solid var(--line); }
+.game-head { position: relative; display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 2px 7px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.game-head::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 4px; border-radius: 2px; background: var(--block); }
+.game-head:hover { background: color-mix(in srgb, var(--chip) 45%, transparent); }
+.game-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
+.game-main { flex: 1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; min-width: 0; }
+.chevron { flex: none; width: 7px; height: 7px; margin: 0 4px 3px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform 0.15s; }
+.game-head[aria-expanded="true"] .chevron { margin-bottom: -3px; transform: rotate(-135deg); }
+/* A game's categories: team | category | opponent, the category winner tinted */
+.game-cats { width: calc(100% - 12px); margin: 0 0 8px 12px; border-collapse: separate; border-spacing: 0 2px; font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+/* (no zebra, hover, header fill or row lines from the site's tables) */
+.game-cats thead tr th, .game-cats tbody tr th, .game-cats tbody tr td { padding: 3px 10px; background: none; border-bottom: 0; text-transform: none; }
+.game-cats thead th { font-family: inherit; font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; }
+.game-cats tbody th { width: 4.5em; font-size: 10px; font-weight: 400; color: var(--muted); letter-spacing: 0.06em; text-align: center; }
+.game-cats .mine { text-align: right; border-radius: 4px 0 0 4px; }
+.game-cats .theirs { text-align: left; border-radius: 0 4px 4px 0; }
+.game-cats tr.won td.mine { font-weight: 700; color: var(--overpaid); background: color-mix(in srgb, var(--overpaid) 14%, transparent); }
+.game-cats tr.lost td.theirs { font-weight: 700; color: var(--underpaid); background: color-mix(in srgb, var(--underpaid) 14%, transparent); }
+.game-cats tr.tied td { color: var(--muted); }
 .luck-week { display: inline-block; padding: 0 5px; border-radius: 4px; background: var(--chip); font-size: 11px; }
 .luck-rec { color: var(--muted); font-family: var(--num-font); }
 .luck-rec b { font-weight: 600; color: var(--text); }

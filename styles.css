@@ -116,7 +116,8 @@ td.num, .star-stats dd, .cat-value, .board.players .player-rank, .cat-legend .wi
 .board td.heat { --heat-c: color-mix(in srgb, var(--accent) calc(var(--heat) * 0.4), transparent); background-image: linear-gradient(var(--heat-c), var(--heat-c)); }
 .board .unscored { color: var(--muted); }
 /* Category leaders get a dotted box; an outline, so the layout doesn't shift */
-.board td.lead { outline: 2px dotted var(--lead); outline-offset: -3px; border-radius: 3px; }
+.board td.lead { outline: 2px dotted #000; outline-offset: -3px; border-radius: 3px; }
+@media (prefers-color-scheme: dark) { .board td.lead { outline-color: var(--text); } }
 .board .inf { font-weight: 400; }
 .board th.sortable, .board th.toggles { cursor: pointer; user-select: none; }
 .board th.sortable:hover, .board th.toggles:hover, .board th.sorted { color: var(--text); }

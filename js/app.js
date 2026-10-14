@@ -98,8 +98,8 @@ function scoreCellHtml(r, cls) {
 
 // A click (or Enter) on a leaderboard row opens the team's Actual vs Worth dialog; without a known
 // matchup that week there's nothing to show, so it opens the team page instead.
-function openTeam(name) {
-  if (luck.has(name)) showLuck(name);
+function openTeam(name, byKeyboard = false) {
+  if (luck.has(name)) showLuck(name, byKeyboard);
   else location.hash = `#/team/${slugOf(name)}`;
 }
 
@@ -127,7 +127,7 @@ function gameCatsHtml(name, g) {
     </table></div>`;
 }
 
-function showLuck(name) {
+function showLuck(name, byKeyboard = false) {
   const l = luck.get(name);
   if (!l) return;
   const gap = gapOf(l);
@@ -147,7 +147,7 @@ function showLuck(name) {
     </li>`).join("");
   const dlg = $("#luck-dialog");
   dlg.innerHTML = `<div class="dialog-body">
-      <div class="dialog-head">
+      <div class="dialog-head" tabindex="-1">
         <h3>${esc(name)}</h3>
         <a class="details-link" href="#/team/${slugOf(name)}">More details <span aria-hidden="true">→</span></a>
         <button type="button" class="dialog-close" aria-label="Close">×</button>
@@ -170,6 +170,11 @@ function showLuck(name) {
     });
   }
   dlg.onclick = (e) => { if (e.target === dlg) dlg.close(); }; // a tap on the backdrop closes it
+  // Focus rings are for the keyboard only, but iOS Safari draws one on whatever gets focus. So the
+  // dialog opens with focus on its own header (the first focusable element, tabindex -1, no ring)
+  // rather than the More details link, and after a tap the row doesn't keep the focus the browser
+  // hands back on closing. Opened with Enter, focus returns to the row.
+  dlg.onclose = () => { if (!byKeyboard) document.activeElement?.blur(); };
   dlg.showModal();
 }
 
@@ -254,7 +259,7 @@ function render() {
     if (tr) openTeam(tr.dataset.team);
   });
   tbody.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && e.target.matches("tr[data-team]")) openTeam(e.target.dataset.team);
+    if (e.key === "Enter" && e.target.matches("tr[data-team]")) openTeam(e.target.dataset.team, true);
   });
   $("#board").querySelector("thead").addEventListener("click", (e) => {
     const t = e.target.closest("[data-toggle]");

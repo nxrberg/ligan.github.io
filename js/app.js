@@ -100,22 +100,23 @@ function scoreCellHtml(r, cls) {
 // reading: the verdict is a red or green pill (none when the week was about what it was worth),
 // each number has a coloured bar on top, and each game has a block green for a won matchup, red
 // for a lost one (grey when level), with wins green and losses red in its record. A game's chevron
-// opens its categories side by side, the winning value tinted.
+// opens its categories as columns, one row per team, the winning value tinted.
 // "win" when the team took more categories than it lost in the matchup, "loss" when fewer, "tie" otherwise.
 const gameResultOf = (g) => (g.won > g.lost ? "win" : g.won < g.lost ? "loss" : "tie");
 
-// A game's categories side by side: the team's value, the category, the opponent's value. The
-// winner of each category is tinted green when it's the team, red when it's the opponent.
+// A game's categories as columns under their headers, one row for the team and one for the
+// opponent. The winner of each category is tinted green when it's the team, red when it's the
+// opponent; tied categories are muted. Scrolls sideways if a narrow phone can't fit every column.
 function gameCatsHtml(name, g) {
-  const side = (v, c, cls) => `<td class="${cls}">${c.format === "pct" && v >= 1 ? "∞" : fmtValue(v, c)}</td>`;
-  const rows = g.cats.map(({ cat: c, mine, theirs, points }) => {
-    const res = points === config.pointsWin ? "won" : points === config.pointsTie ? "tied" : "lost";
-    return `<tr class="${res}">${side(mine, c, "mine")}<th scope="row">${esc(c.label)}</th>${side(theirs, c, "theirs")}</tr>`;
-  }).join("");
-  return `<table class="game-cats" hidden>
-      <thead><tr><th class="mine" title="${esc(name)}">${esc(abbrOf(name))}</th><th></th><th class="theirs" title="${esc(g.opponent)}">${esc(abbrOf(g.opponent))}</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
+  const value = (v, c) => (c.format === "pct" && v >= 1 ? "∞" : fmtValue(v, c));
+  const resOf = (points) => (points === config.pointsWin ? "won" : points === config.pointsTie ? "tied" : "lost");
+  const row = (team, cls, key, wins) => `<tr class="${cls}"><th scope="row" title="${esc(team)}">${esc(abbrOf(team))}</th>${g.cats
+    .map((gc) => { const res = resOf(gc.points); return `<td class="${res === wins ? "win" : res === "tied" ? "tie" : ""}">${value(gc[key], gc.cat)}</td>`; })
+    .join("")}</tr>`;
+  return `<div class="game-cats" hidden><table>
+      <thead><tr><th></th>${g.cats.map((gc) => `<th scope="col">${esc(gc.cat.label)}</th>`).join("")}</tr></thead>
+      <tbody>${row(name, "mine", "mine", "won")}${row(g.opponent, "theirs", "theirs", "lost")}</tbody>
+    </table></div>`;
 }
 
 function showLuck(name) {

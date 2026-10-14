@@ -176,17 +176,17 @@ td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend 
 .game-main { flex: 1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; min-width: 0; }
 .chevron { flex: none; width: 7px; height: 7px; margin: 0 4px 3px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform 0.15s; }
 .game-head[aria-expanded="true"] .chevron { margin-bottom: -3px; transform: rotate(-135deg); }
-/* A game's categories: team | category | opponent, the category winner tinted */
-.game-cats { width: calc(100% - 12px); margin: 0 0 8px 12px; border-collapse: separate; border-spacing: 0 2px; font-family: var(--num-font); font-variant-numeric: tabular-nums; }
-/* (no zebra, hover, header fill or row lines from the site's tables) */
-.game-cats thead tr th, .game-cats tbody tr th, .game-cats tbody tr td { padding: 3px 10px; background: none; border-bottom: 0; text-transform: none; }
-.game-cats thead th { font-family: inherit; font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; }
-.game-cats tbody th { width: 4.5em; font-size: 10px; font-weight: 400; color: var(--muted); letter-spacing: 0.06em; text-align: center; }
-.game-cats .mine { text-align: right; border-radius: 4px 0 0 4px; }
-.game-cats .theirs { text-align: left; border-radius: 0 4px 4px 0; }
-.game-cats tr.won td.mine { font-weight: 700; color: var(--overpaid); background: color-mix(in srgb, var(--overpaid) 14%, transparent); }
-.game-cats tr.lost td.theirs { font-weight: 700; color: var(--underpaid); background: color-mix(in srgb, var(--underpaid) 14%, transparent); }
-.game-cats tr.tied td { color: var(--muted); }
+/* A game's categories as columns, a row per team, the category winner tinted (no zebra, hover,
+   header fill or row lines from the site's tables). Scrolls sideways if it can't fit. */
+.game-cats { margin: 0 0 8px; overflow-x: auto; }
+.game-cats table { width: 100%; border-collapse: separate; border-spacing: 1px 2px; font-family: var(--num-font); font-size: 11px; font-variant-numeric: tabular-nums; }
+.game-cats thead tr th, .game-cats tbody tr th, .game-cats tbody tr td { padding: 3px 2px; background: none; border-bottom: 0; text-transform: none; text-align: center; }
+.game-cats thead th { font-family: inherit; font-size: 9px; font-weight: 400; color: var(--muted); letter-spacing: 0.04em; }
+.game-cats tbody th { padding-right: 6px; font-family: inherit; font-size: 10px; font-weight: 600; color: var(--muted); text-align: left; }
+.game-cats td { border-radius: 4px; }
+.game-cats td.tie { color: var(--muted); }
+.game-cats tr.mine td.win { font-weight: 700; color: var(--overpaid); background: color-mix(in srgb, var(--overpaid) 14%, transparent); }
+.game-cats tr.theirs td.win { font-weight: 700; color: var(--underpaid); background: color-mix(in srgb, var(--underpaid) 14%, transparent); }
 .luck-week { display: inline-block; padding: 0 5px; border-radius: 4px; background: var(--chip); font-size: 11px; }
 .luck-rec { color: var(--muted); font-family: var(--num-font); }
 .luck-rec b { font-weight: 600; color: var(--text); }

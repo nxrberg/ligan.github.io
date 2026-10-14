@@ -106,22 +106,33 @@ function openTeam(name, byKeyboard = false) {
 // category record, points), which doubles as the team's matchup history. Colour carries the
 // reading: the verdict is a red or green pill (none when the week was about what it was worth),
 // each number has a coloured bar on top, and each game has a block green for a won matchup, red
-// for a lost one (grey when level), with wins green and losses red in its record. A game's chevron
-// opens its categories as columns, one row per team, the winning value tinted.
+// for a lost one (grey when level). Its record is categories won–lost, the bigger one in bold.
+// Under Actual: the team's place in the league by Actual that week (not on All) and over all
+// weeks. A game's chevron opens its categories as columns, one row per team, the winning value
+// tinted; on a single week the one game opens with them showing.
 // "win" when the team took more categories than it lost in the matchup, "loss" when fewer, "tie" otherwise.
 const gameResultOf = (g) => (g.won > g.lost ? "win" : g.won < g.lost ? "loss" : "tie");
+
+// A game's record as categories won–lost (ties left out), the bigger number in bold.
+function recordHtml(g) {
+  const b = (n, lead) => `<b${lead ? ' class="lead"' : ""}>${n}</b>`;
+  return `<span class="rec">${b(g.won, g.won > g.lost)}–${b(g.lost, g.lost > g.won)}</span>`;
+}
+
+// A team's place in `luckMap` by Actual: 1 + the teams with more (tied teams share a place).
+const placeOf = (luckMap, name) => 1 + [...luckMap.values()].filter((o) => o.actual > luckMap.get(name).actual).length;
 
 // A game's categories as columns under their headers, the team's row on top and the opponent's
 // below (no names: the dialog is the team's, so its row is always first; hovering a row names it).
 // The winner of each category is tinted green when it's the team, red when it's the
 // opponent; tied categories are muted. Scrolls sideways if a narrow phone can't fit every column.
-function gameCatsHtml(name, g) {
+function gameCatsHtml(name, g, open) {
   const value = (v, c) => (c.format === "pct" && v >= 1 ? "∞" : fmtValue(v, c));
   const resOf = (points) => (points === config.pointsWin ? "won" : points === config.pointsTie ? "tied" : "lost");
   const row = (team, cls, key, wins) => `<tr class="${cls}" title="${esc(team)}">${g.cats
     .map((gc) => { const res = resOf(gc.points); return `<td class="${res === wins ? "win" : res === "tied" ? "tie" : ""}">${value(gc[key], gc.cat)}</td>`; })
     .join("")}</tr>`;
-  return `<div class="game-cats" hidden><table>
+  return `<div class="game-cats"${open ? "" : " hidden"}><table>
       <thead><tr>${g.cats.map((gc) => `<th scope="col">${esc(gc.cat.label)}</th>`).join("")}</tr></thead>
       <tbody>${row(name, "mine", "mine", "won")}${row(g.opponent, "theirs", "theirs", "lost")}</tbody>
     </table></div>`;
@@ -135,16 +146,20 @@ function showLuck(name, byKeyboard = false) {
   const perWeek = l.weeks > 1 ? " per week" : "";
   const verdict = paid === "underpaid" ? `Underpaid by ${(-gap).toFixed(1)}${perWeek}`
     : paid === "overpaid" ? `Overpaid by ${gap.toFixed(1)}${perWeek}` : "";
+  const open = week !== ALL; // a single week's one game opens with its categories showing
   const games = l.games.map((g) => `<li class="${gameResultOf(g)}">
-      <button type="button" class="game-head" aria-expanded="false" title="Show categories">
+      <button type="button" class="game-head" aria-expanded="${open}" title="Show categories">
         <span class="game-main">
           <span><span class="luck-week">${esc(g.week)}</span> vs <strong>${esc(g.opponent)}</strong></span>
-          <span class="luck-rec"><b class="won">${g.won}</b>–<b class="lost">${g.lost}</b>–<b class="tied">${g.tied}</b> · <b>${g.actual}</b> pts · worth ${g.worth.toFixed(1)}</span>
+          <span class="luck-rec">${recordHtml(g)} · <b>${g.actual}</b> pts · worth ${g.worth.toFixed(1)}</span>
         </span>
         <span class="chevron" aria-hidden="true"></span>
       </button>
-      ${gameCatsHtml(name, g)}
+      ${gameCatsHtml(name, g, open)}
     </li>`).join("");
+  const total = week === ALL ? luck : seasonLuck(data.teams, data.matchups);
+  const places = [week === ALL ? "" : `Week: ${ordinal(placeOf(luck, name))} place`, total.has(name) ? `Total: ${ordinal(placeOf(total, name))} place` : ""]
+    .filter(Boolean).map((p) => `<span class="luck-place">${p}</span>`).join("");
   const dlg = $("#luck-dialog");
   dlg.innerHTML = `<div class="sheet-handle" aria-hidden="true"></div>
     <div class="dialog-body">
@@ -155,7 +170,7 @@ function showLuck(name, byKeyboard = false) {
       </div>
       ${verdict ? `<p class="luck-verdict ${paid}">${verdict}</p>` : ""}
       <dl class="luck-nums">
-        <div class="actual"><dt>Actual</dt><dd>${l.actual}</dd></div>
+        <div class="actual"><dt>Actual</dt><dd>${l.actual}${places}</dd></div>
         <div class="worth"><dt>Worth</dt><dd>${l.worth.toFixed(1)}</dd></div>
         <div class="gap ${paid}"><dt>Gap</dt><dd>${signed(l.actual - l.worth)}</dd></div>
       </dl>

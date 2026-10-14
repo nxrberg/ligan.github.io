@@ -115,9 +115,11 @@ td.num, .star-stats dd, .cat-value, .board.players .player-rank, .cat-legend .wi
 .board th.score { width: 4em; }
 .board td.heat { --heat-c: color-mix(in srgb, var(--accent) calc(var(--heat) * 0.4), transparent); background-image: linear-gradient(var(--heat-c), var(--heat-c)); }
 .board .unscored { color: var(--muted); }
-/* Category leaders get a dotted box; an outline, so the layout doesn't shift */
-.board td.lead { outline: 2px dotted #000; outline-offset: -3px; border-radius: 3px; }
-@media (prefers-color-scheme: dark) { .board td.lead { outline-color: var(--text); } }
+/* Category leaders get a dotted box, drawn as a border on a layer inside the cell so the layout doesn't shift
+   (an outline on a table cell loses its sides in some iOS Safari versions) */
+.board td.lead { position: relative; }
+.board td.lead::after { content: ""; position: absolute; inset: 3px; border: 2px dotted #000; border-radius: 3px; pointer-events: none; }
+@media (prefers-color-scheme: dark) { .board td.lead::after { border-color: var(--text); } }
 .board .inf { font-weight: 400; }
 .board th.sortable, .board th.toggles { cursor: pointer; user-select: none; }
 .board th.sortable:hover, .board th.toggles:hover, .board th.sorted { color: var(--text); }

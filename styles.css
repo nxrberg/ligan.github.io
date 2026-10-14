@@ -189,9 +189,10 @@ html.sheet-lock { overflow: hidden; }
 .luck-nums dt { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
 .luck-nums dd { margin: 2px 0 0; font-family: var(--num-font); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .luck-nums .actual dd { color: var(--accent); }
-/* Under Actual: the week's place and the total place in the league */
-.luck-place { display: block; margin-top: 1px; color: var(--muted); font-family: var(--num-font); font-size: 9px; font-weight: 400; line-height: 1.35; letter-spacing: 0; }
-.luck-nums dd .luck-place:first-of-type { margin-top: 3px; }
+/* Under Actual: "New league rank" and the rank under it */
+.luck-rank { display: block; margin-top: 3px; line-height: 1.35; letter-spacing: 0; }
+.luck-rank-label { display: block; color: var(--muted); font-family: var(--num-font); font-size: 9px; font-weight: 400; }
+.luck-rank-value { display: block; color: var(--text); font-size: 12px; font-weight: 700; }
 /* Games: a block before each, green for a won matchup and red for a lost one, the week as a chip,
    wins green and losses red in the record, and a chevron that opens the categories */
 .luck-games { list-style: none; margin: 0; padding: 0; font-size: 12px; }

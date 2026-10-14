@@ -107,8 +107,8 @@ function openTeam(name, byKeyboard = false) {
 // reading: the verdict is a red or green pill (none when the week was about what it was worth),
 // each number has a coloured bar on top, and each game has a block green for a won matchup, red
 // for a lost one (grey when level). Its record is categories won–lost, the bigger one in bold.
-// Under Actual: the team's place in the league by Actual that week (not on All) and over all
-// weeks. A game's chevron opens its categories as columns, one row per team, the winning value
+// Under Actual: the team's new league rank, by Actual summed over the weeks up to and including
+// the shown one (all weeks on All). A game's chevron opens its categories as columns, one row per team, the winning value
 // tinted; on a single week the one game opens with them showing.
 // "win" when the team took more categories than it lost in the matchup, "loss" when fewer, "tie" otherwise.
 const gameResultOf = (g) => (g.won > g.lost ? "win" : g.won < g.lost ? "loss" : "tie");
@@ -157,9 +157,12 @@ function showLuck(name, byKeyboard = false) {
       </button>
       ${gameCatsHtml(name, g, open)}
     </li>`).join("");
-  const total = week === ALL ? luck : seasonLuck(data.teams, data.matchups);
-  const places = [week === ALL ? "" : `Week: ${ordinal(placeOf(luck, name))} place`, total.has(name) ? `Total: ${ordinal(placeOf(total, name))} place` : ""]
-    .filter(Boolean).map((p) => `<span class="luck-place">${p}</span>`).join("");
+  const weeks = weeksOf(data.teams);
+  const upTo = week === ALL ? weeks : weeks.slice(0, weeks.indexOf(week) + 1);
+  const standings = seasonLuck(data.teams, Object.fromEntries(upTo.filter((w) => data.matchups[w]).map((w) => [w, data.matchups[w]])));
+  const rank = standings.has(name)
+    ? `<span class="luck-rank"><span class="luck-rank-label">New league rank</span><span class="luck-rank-value">${ordinal(placeOf(standings, name))}</span></span>`
+    : "";
   const dlg = $("#luck-dialog");
   dlg.innerHTML = `<div class="sheet-handle" aria-hidden="true"></div>
     <div class="dialog-body">
@@ -170,7 +173,7 @@ function showLuck(name, byKeyboard = false) {
       </div>
       ${verdict ? `<p class="luck-verdict ${paid}">${verdict}</p>` : ""}
       <dl class="luck-nums">
-        <div class="actual"><dt>Actual</dt><dd>${l.actual}${places}</dd></div>
+        <div class="actual"><dt>Actual</dt><dd>${l.actual}${rank}</dd></div>
         <div class="worth"><dt>Worth</dt><dd>${l.worth.toFixed(1)}</dd></div>
         <div class="gap ${paid}"><dt>Gap</dt><dd>${signed(l.actual - l.worth)}</dd></div>
       </dl>

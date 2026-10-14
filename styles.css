@@ -135,9 +135,11 @@ td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend 
 /* Matchup luck: red when the real matchup paid much less than the week was worth, green when much more */
 .board td.score.underpaid, .notes .underpaid, .dialog .underpaid { color: var(--underpaid); }
 .board td.score.overpaid, .notes .overpaid, .dialog .overpaid { color: var(--overpaid); }
-/* Score as a button (when the matchup is known): looks like the number, opens the Actual vs Worth dialog */
-.score-btn { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline dotted 1px; text-underline-offset: 3px; }
-.score-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+/* Leaderboard rows open the team's Actual vs Worth dialog (or the team page without a known matchup);
+   a Score with a dialog behind it is underlined dotted */
+.board tbody tr.team-row { cursor: pointer; }
+.board tbody tr.team-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.score-link { text-decoration: underline dotted 1px; text-underline-offset: 3px; }
 
 /* Actual vs Worth dialog */
 .dialog { width: min(360px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--text); }
@@ -145,7 +147,13 @@ td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend 
 .dialog-body { position: relative; padding: 18px 16px 16px; }
 .dialog-close { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 20px; line-height: 1; cursor: pointer; }
 .dialog-close:hover { background: var(--chip); color: var(--text); }
-.dialog h3 { margin: 0 36px 2px 0; font-size: 15px; }
+.dialog-head { display: flex; align-items: center; gap: 8px; margin: -6px -8px 2px 0; }
+.dialog-head h3 { flex: 1; min-width: 0; margin: 0; font-size: 15px; }
+.dialog-head .dialog-close { position: static; flex: none; }
+/* "More details →": a plain link to the team page */
+.details-link { flex: none; color: var(--accent); font-size: 11px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.details-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.details-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
 /* Verdict as a tinted pill with a dot; only shown when the Score is coloured */
 .luck-verdict { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 12px; padding: 3px 10px 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
 .luck-verdict::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
@@ -162,13 +170,31 @@ td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend 
 .luck-nums dt { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
 .luck-nums dd { margin: 2px 0 0; font-family: var(--num-font); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .luck-nums .actual dd { color: var(--accent); }
-/* Games: a block before each in that game's own colour, the week as a chip, wins green and losses red */
+/* Games: a block before each, green for a won matchup and red for a lost one, the week as a chip,
+   wins green and losses red in the record, and a chevron that opens the categories */
 .luck-games { list-style: none; margin: 0; padding: 0; font-size: 12px; }
-.luck-games li { --block: var(--faint); position: relative; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; padding: 7px 0 7px 12px; border-top: 1px solid var(--line); }
-.luck-games li::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 4px; border-radius: 2px; background: var(--block); }
-.luck-games li.underpaid { --block: var(--underpaid); color: var(--text); }
-.luck-games li.overpaid { --block: var(--overpaid); color: var(--text); }
+.luck-games li { --block: var(--faint); border-top: 1px solid var(--line); }
+.luck-games li.win { --block: var(--overpaid); }
+.luck-games li.loss { --block: var(--underpaid); }
 .luck-games li:last-child { border-bottom: 1px solid var(--line); }
+.game-head { position: relative; display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 2px 7px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.game-head::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 4px; border-radius: 2px; background: var(--block); }
+.game-head:hover { background: color-mix(in srgb, var(--chip) 45%, transparent); }
+.game-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 4px; }
+.game-main { flex: 1; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; min-width: 0; }
+.chevron { flex: none; width: 7px; height: 7px; margin: 0 4px 3px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform 0.15s; }
+.game-head[aria-expanded="true"] .chevron { margin-bottom: -3px; transform: rotate(-135deg); }
+/* A game's categories as columns, a row per team, the category winner tinted (no zebra, hover,
+   header fill or row lines from the site's tables). Scrolls sideways if it can't fit. */
+.game-cats { margin: 0 0 8px; overflow-x: auto; }
+.game-cats table { width: 100%; border-collapse: separate; border-spacing: 1px 2px; font-family: var(--num-font); font-size: 11px; font-variant-numeric: tabular-nums; }
+.game-cats thead tr th, .game-cats tbody tr th, .game-cats tbody tr td { padding: 3px 2px; background: none; border-bottom: 0; text-transform: none; text-align: center; }
+.game-cats thead th { font-family: inherit; font-size: 9px; font-weight: 400; color: var(--muted); letter-spacing: 0.04em; }
+.game-cats tbody th { padding-right: 6px; font-family: inherit; font-size: 10px; font-weight: 600; color: var(--muted); text-align: left; }
+.game-cats td { border-radius: 4px; }
+.game-cats td.tie { color: var(--muted); }
+.game-cats tr.mine td.win { font-weight: 700; color: var(--overpaid); background: color-mix(in srgb, var(--overpaid) 14%, transparent); }
+.game-cats tr.theirs td.win { font-weight: 700; color: var(--underpaid); background: color-mix(in srgb, var(--underpaid) 14%, transparent); }
 .luck-week { display: inline-block; padding: 0 5px; border-radius: 4px; background: var(--chip); font-size: 11px; }
 .luck-rec { color: var(--muted); font-family: var(--num-font); }
 .luck-rec b { font-weight: 600; color: var(--text); }
@@ -220,9 +246,9 @@ td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend 
   .board td.lead::before { content: "★ "; color: var(--lead); font-size: 11px; }
 }
 
-/* Team names on the leaderboard open the team's page */
+/* Team name (and logo) on the leaderboard; the whole row is clickable */
 .board .team-link { color: inherit; text-decoration: none; display: block; }
-.board .team-link:hover strong { color: var(--accent); }
+.board tr.team-row:hover .team-link strong { color: var(--accent); }
 @media (min-width: 760px) { .board .team-link { display: inline; } }
 
 /* Team page */

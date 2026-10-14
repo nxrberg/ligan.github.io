@@ -78,7 +78,8 @@ export function weeklyBoard(teams, week) {
 // 14). Worth is its Score divided by the number of other teams: what its week would earn against
 // an average opponent. `opponents` is { team name -> opponent name } for the board's `week`.
 // Returns Map of team name -> { actual, worth, weeks: 1, games: [one game] } for the teams whose
-// matchup is known; a game also has the opponent, the category record (won, lost, tied) and Score.
+// matchup is known; a game also has the opponent, the category record (won, lost, tied), Score and
+// `cats`: each scored category with both teams' values and the points it gave this team.
 export function matchupLuck(board, opponents = {}, week = "") {
   const byName = new Map(board.rows.map((r) => [r.name, r]));
   const scored = board.cats.filter((c) => c.scored);
@@ -86,9 +87,10 @@ export function matchupLuck(board, opponents = {}, week = "") {
   for (const r of board.rows) {
     const o = byName.get(opponents[r.name]);
     if (!o || !r.line || !o.line) continue;
-    const game = { week, opponent: o.name, score: r.score, actual: 0, worth: r.score / (board.rows.length - 1), won: 0, lost: 0, tied: 0 };
+    const game = { week, opponent: o.name, score: r.score, actual: 0, worth: r.score / (board.rows.length - 1), won: 0, lost: 0, tied: 0, cats: [] };
     for (const c of scored) {
       const p = catPoints(c, r.values[c.key], o.values[c.key]);
+      game.cats.push({ cat: c, mine: r.values[c.key], theirs: o.values[c.key], points: p });
       game.actual += p;
       game[p === config.pointsWin ? "won" : p === config.pointsTie ? "tied" : "lost"] += 1;
     }

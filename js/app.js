@@ -1,6 +1,6 @@
 import { config } from "./config.js";
 import { loadData } from "./data.js";
-import { ALL, SKATER_CATS, leagueSkaters, playerBoard, seasonSkaters, threeStars, weeksOf, weeklyBoard } from "./stats.js";
+import { ALL, SKATER_CATS, leagueSkaters, matchupLuck, playerBoard, seasonLuck, seasonSkaters, threeStars, weeksOf, weeklyBoard } from "./stats.js";
 // TanStack Table (headless, MIT) from a pinned CDN build, so the site still needs no build step.
 import { createTable, getCoreRowModel, getSortedRowModel } from "https://cdn.jsdelivr.net/npm/@tanstack/table-core@8.21.3/+esm";
 
@@ -14,6 +14,7 @@ let sorting = [{ id: "score", desc: true }]; // click a column header to sort by
 let showHeat = readPref("heatmap", true);
 let infoOpen = false; // the (i) notes under the table stay open across re-renders
 const expanded = new Set(); // categories whose `toggledBy` columns are showing
+let luck = new Map(); // team name -> { actual, worth, weeks } for the shown week, from matchupLuck
 
 // Per-viewer display preferences; storage can be unavailable, so fall back quietly.
 function readPref(key, fallback) {
@@ -81,13 +82,25 @@ function headerHtml(h) {
   return `<th class="${classes}" ${attrs} title="${esc(title)}">${esc(label)}${arrow}${toggle}</th>`;
 }
 
+// Score, in red when the team's matchup paid it at least config.luckThreshold points less than
+// its play was worth (per week on All), in green when it paid that much more. See matchupLuck.
+function scoreCellHtml(r, cls) {
+  const l = luck.get(r.name);
+  if (!l) return `<td class="${cls}"><strong>${r.score}</strong></td>`;
+  const gap = (l.actual - l.worth) / l.weeks;
+  const paid = gap >= config.luckThreshold ? " overpaid" : gap <= -config.luckThreshold ? " underpaid" : "";
+  const per = l.weeks > 1 ? `, over ${l.weeks} weeks (${signed(gap)} per week)` : "";
+  const tip = `Matchup: ${l.actual} actual vs ${l.worth.toFixed(1)} worth (${signed(l.actual - l.worth)})${per}`;
+  return `<td class="${cls}${paid}" title="${esc(tip)}"><strong>${r.score}</strong></td>`;
+}
+
 function cellHtml(cell, maxPerCat) {
   const r = cell.row.original;
   const { cat: c, cls = "" } = cell.column.columnDef.meta;
   if (cell.column.id === "rank") return `<td class="${cls}">${r.rank}</td>`;
   if (cell.column.id === "team")
     return `<td class="${cls}${r.logo ? " has-logo" : ""}" title="${esc(r.name)}"><a class="team-link" href="#/team/${slugOf(r.name)}">${logoHtml(r)}<strong><span class="full">${esc(r.name)}</span><span class="abbr">${esc(abbrOf(r.name))}</span></strong></a></td>`;
-  if (cell.column.id === "score") return `<td class="${cls}"><strong>${r.score}</strong></td>`;
+  if (cell.column.id === "score") return scoreCellHtml(r, cls);
 
   const p = r.points[c.key];
   const heat = showHeat && c.scored && p != null ? p / maxPerCat : null;
@@ -147,6 +160,7 @@ function render() {
   const board = weeklyBoard(data.teams, week);
   const { rows, maxPerCat, maxScore } = board;
   allCats = board.cats;
+  luck = week === ALL ? seasonLuck(data.teams, data.matchups) : matchupLuck(board, data.matchups[week]);
   const table = makeTable(rows, board.cats);
 
   const head = table.getHeaderGroups().map((g) => `<tr>${g.headers.map(headerHtml).join("")}</tr>`).join("");
@@ -170,6 +184,8 @@ function render() {
   const info = [
     `Each category gives ${config.pointsWin} points for every team you beat and ${config.pointsTie} for every tie (max ${maxPerCat} per category, ${maxScore} total).`,
     "A team with a value in a category beats a team without one, and two teams without a value tie.",
+    `Score is <span class="underpaid">red</span> when a team's real matchup paid it at least ${config.luckThreshold} points less than its week was worth, and <span class="overpaid">green</span> when it paid at least ${config.luckThreshold} more${week === ALL ? " (per week, over the weeks with known matchups)" : ""}. Actual is the matchup result (${config.pointsWin} per category won, ${config.pointsTie} per tie); worth is Score divided by ${rows.length - 1}, what the week would earn against an average team. Hover a Score to see both.`,
+    luck.size ? "" : `The matchups for ${week === ALL ? "these weeks" : esc(week)} aren't in the data yet, so no Score is coloured.`,
   ].filter(Boolean);
   $("#notes").innerHTML = infoHtml(info, fetched ? `Data fetched ${esc(fetched)}.` : "");
   bindInfo($("#notes"));

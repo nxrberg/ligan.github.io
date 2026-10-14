@@ -14,6 +14,8 @@
   --lead: #d4a017;
   --num-font: "Roboto Mono", ui-monospace, monospace;
   --compare: #d9735b;
+  --underpaid: #c0392b;
+  --overpaid: #2e8b4f;
   color-scheme: light dark;
 }
 @media (prefers-color-scheme: dark) {
@@ -21,6 +23,7 @@
     --panel: #121a1e; --head: #172126; --zebra: #141b1f; --chip: #222c31;
     --text: #d7dcde; --muted: #7f8a90; --faint: #4c575c; --line: #26302f;
     --accent: #5aa0c2; --on-accent: #08161d; --lead: #e3b341; --compare: #e48a72;
+    --underpaid: #f0776b; --overpaid: #5cc98a;
   }
 }
 
@@ -129,6 +132,9 @@ td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend 
 .board .col-rank { display: none; }
 .board td.score { font-weight: 700; font-size: 11px; background-image: linear-gradient(color-mix(in srgb, var(--chip) 45%, transparent), color-mix(in srgb, var(--chip) 45%, transparent)); }
 .board th.score { width: 4em; }
+/* Matchup luck: red when the real matchup paid much less than the week was worth, green when much more */
+.board td.score.underpaid, .notes .underpaid { color: var(--underpaid); }
+.board td.score.overpaid, .notes .overpaid { color: var(--overpaid); }
 .board td.heat { --heat-c: color-mix(in srgb, var(--accent) calc(var(--heat) * 0.4), transparent); background-image: linear-gradient(var(--heat-c), var(--heat-c)); }
 .board .unscored { color: var(--muted); }
 /* Category leaders get a dotted box, drawn as a border on a layer inside the cell so the layout doesn't shift

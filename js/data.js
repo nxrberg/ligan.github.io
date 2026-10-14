@@ -93,6 +93,19 @@ function logosOf(rows) {
   return m;
 }
 
+// Daily tab rows -> { week -> { team name -> opponent name } }. A matchup lasts the whole week, so
+// any day's row gives it. Names are matched loosely against config.teams ("kingkordies" -> "Kingkordies").
+function matchupsOf(rows) {
+  const names = new Map(config.teams.flatMap((t) => [[key(t.name), t.name], [key(t.sheet), t.name]]));
+  const weeks = {};
+  for (const r of rows) {
+    const team = names.get(key(r.team));
+    const opponent = names.get(key(r.opponent));
+    if (r.week && team && opponent && team !== opponent) (weeks[r.week] ||= {})[team] = opponent;
+  }
+  return weeks;
+}
+
 // Where the data comes from, newest first:
 //   1. config.liveDataUrl: the file the Pi uploads after every export, read on each page load,
 //      so new data shows up without a deploy.
@@ -139,5 +152,5 @@ export async function loadData() {
     logo: logos.get(key(t.name)) || logos.get(key(t.sheet)) || null,
     weeks: parseTeam(rowsOf(tabOf(all, t.sheet, t.name) || [])),
   }));
-  return { source, teams };
+  return { source, teams, matchups: matchupsOf(rowsOf(tabOf(all, config.dailySheet) || [])) };
 }

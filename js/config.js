@@ -13,7 +13,8 @@ export const config = {
   // Sheety endpoint for the Teams tab (Id, Team, Logo, Updated) that the export writes; gives each team's logo.
   teamsSheet: "teams",
 
-  // The Daily tab (player rows per date with Team and Opponent); gives each week's head-to-head matchups.
+  // The Daily tab (player rows per date with Team and Opponent). Each week's head-to-head matchup comes
+  // from the team tabs' `opponent` column; this tab fills in weeks the team tabs don't have it for.
   dailySheet: "daily",
 
   // `sheet` is the Sheety endpoint name for the team's tab (it gets URL-encoded, so "#10" and "q's" are fine).

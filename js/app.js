@@ -112,17 +112,18 @@ function openTeam(name, byKeyboard = false) {
 // "win" when the team took more categories than it lost in the matchup, "loss" when fewer, "tie" otherwise.
 const gameResultOf = (g) => (g.won > g.lost ? "win" : g.won < g.lost ? "loss" : "tie");
 
-// A game's categories as columns under their headers, one row for the team and one for the
-// opponent. The winner of each category is tinted green when it's the team, red when it's the
+// A game's categories as columns under their headers, the team's row on top and the opponent's
+// below (no names: the dialog is the team's, so its row is always first; hovering a row names it).
+// The winner of each category is tinted green when it's the team, red when it's the
 // opponent; tied categories are muted. Scrolls sideways if a narrow phone can't fit every column.
 function gameCatsHtml(name, g) {
   const value = (v, c) => (c.format === "pct" && v >= 1 ? "∞" : fmtValue(v, c));
   const resOf = (points) => (points === config.pointsWin ? "won" : points === config.pointsTie ? "tied" : "lost");
-  const row = (team, cls, key, wins) => `<tr class="${cls}"><th scope="row" title="${esc(team)}">${esc(abbrOf(team))}</th>${g.cats
+  const row = (team, cls, key, wins) => `<tr class="${cls}" title="${esc(team)}">${g.cats
     .map((gc) => { const res = resOf(gc.points); return `<td class="${res === wins ? "win" : res === "tied" ? "tie" : ""}">${value(gc[key], gc.cat)}</td>`; })
     .join("")}</tr>`;
   return `<div class="game-cats" hidden><table>
-      <thead><tr><th></th>${g.cats.map((gc) => `<th scope="col">${esc(gc.cat.label)}</th>`).join("")}</tr></thead>
+      <thead><tr>${g.cats.map((gc) => `<th scope="col">${esc(gc.cat.label)}</th>`).join("")}</tr></thead>
       <tbody>${row(name, "mine", "mine", "won")}${row(g.opponent, "theirs", "theirs", "lost")}</tbody>
     </table></div>`;
 }

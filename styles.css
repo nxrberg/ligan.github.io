@@ -188,9 +188,8 @@ td.num, .star-stats dd, .player-stats dd, .cat-value, .player-rank, .cat-legend 
    header fill or row lines from the site's tables). Scrolls sideways if it can't fit. */
 .game-cats { margin: 0 0 8px; overflow-x: auto; }
 .game-cats table { width: 100%; border-collapse: separate; border-spacing: 1px 2px; font-family: var(--num-font); font-size: 11px; font-variant-numeric: tabular-nums; }
-.game-cats thead tr th, .game-cats tbody tr th, .game-cats tbody tr td { padding: 3px 2px; background: none; border-bottom: 0; text-transform: none; text-align: center; }
+.game-cats thead tr th, .game-cats tbody tr td { padding: 3px 2px; background: none; border-bottom: 0; text-transform: none; text-align: center; }
 .game-cats thead th { font-family: inherit; font-size: 9px; font-weight: 400; color: var(--muted); letter-spacing: 0.04em; }
-.game-cats tbody th { padding-right: 6px; font-family: inherit; font-size: 10px; font-weight: 600; color: var(--muted); text-align: left; }
 .game-cats td { border-radius: 4px; }
 .game-cats td.tie { color: var(--muted); }
 .game-cats tr.mine td.win { font-weight: 700; color: var(--overpaid); background: color-mix(in srgb, var(--overpaid) 14%, transparent); }

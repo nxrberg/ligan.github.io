@@ -82,6 +82,22 @@ function parseTeam(rows) {
   return weeks;
 }
 
+// The season a date falls in: an NHL season runs from autumn into the next summer, so
+// "2026-10-10" -> "2026-27" and "2027-03-01" -> "2026-27".
+function seasonOfDate(date) {
+  const m = String(date ?? "").match(/^(\d{4})-(\d{2})/);
+  if (!m) return null;
+  const start = Number(m[1]) - (Number(m[2]) < 7 ? 1 : 0);
+  return `${start}-${String((start + 1) % 100).padStart(2, "0")}`;
+}
+
+// Is a row from config.season? Team tabs have a `season` column; the Daily tab has a date instead.
+// Rows with neither (exports from before the column existed) are kept.
+function inSeason(r) {
+  const season = String(r.season ?? "").trim() || seasonOfDate(r.date);
+  return !season || season === config.season;
+}
+
 // Team names compared loosely, so "Q's", "q's" and "qs" all match.
 const key = (s) => String(s ?? "").toLowerCase().replace(/[^\p{L}\p{N}#]/gu, "");
 
@@ -159,7 +175,7 @@ export async function loadData() {
   const teams = config.teams.map((t) => ({
     ...t,
     logo: logos.get(key(t.name)) || logos.get(key(t.sheet)) || null,
-    weeks: parseTeam(rowsOf(tabOf(all, t.sheet, t.name) || [])),
+    weeks: parseTeam(rowsOf(tabOf(all, t.sheet, t.name) || []).filter(inSeason)),
   }));
-  return { source, teams, matchups: matchupsOf(teams, rowsOf(tabOf(all, config.dailySheet) || [])) };
+  return { source, teams, matchups: matchupsOf(teams, rowsOf(tabOf(all, config.dailySheet) || []).filter(inSeason)) };
 }

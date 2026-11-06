@@ -3,6 +3,10 @@
 export const config = {
   leagueName: "Ligan",
 
+  // The season the site shows. The export also uploads every earlier season (rows carry a `season`
+  // column, e.g. "2012-13"); only rows from this one are read.
+  season: "2026-27",
+
   // The Pi uploads the sheet's contents here after every export (branch "data" of the site repo);
   // the site reads it on each page load, so new data needs no deploy.
   liveDataUrl: "https://raw.githubusercontent.com/nxrberg/ligan.github.io/data/league.json",

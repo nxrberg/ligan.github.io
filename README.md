@@ -6,7 +6,7 @@ sheet, cut down to that season, as `{ "<tab title>": { "rows": [ {header: value,
 
 - Team tabs: rows whose `season` column is that season. A team without rows that season is left out.
 - Daily: rows whose `date` falls in that season (a season runs July–June).
-- Teams (logos): only in the latest season's file.
+- Teams (logos): in every file, as of that file's last upload.
 
 An export only re-uploads the season it wrote, so old seasons stay as they are.
 

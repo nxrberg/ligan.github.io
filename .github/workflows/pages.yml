@@ -1,7 +1,7 @@
 name: Deploy site
 
 # Publishes the site to GitHub Pages on code pushes and on demand. Data doesn't need a deploy:
-# the Pi uploads league.json to the `data` branch after every export and the site reads it on
+# the Pi uploads seasons/<season>.json to the `data` branch after every export and the site reads it on
 # page load. The deploy only bakes a copy of that file in as a fallback.
 on:
   push:
@@ -28,7 +28,8 @@ jobs:
       # Fallback copy of the data: the Pi's latest upload, else whatever the live site has now.
       - name: Get fallback data
         run: |
-          git fetch --depth=1 origin data && git show FETCH_HEAD:league.json > data/league.json && exit 0
+          season=$(sed -nE 's/^const season = "([0-9]{4}-[0-9]{2})";.*/\1/p' js/config.js)
+          git fetch --depth=1 origin data && git show "FETCH_HEAD:seasons/$season.json" > data/league.json && exit 0
           echo "::warning title=No data branch file::Using the data from the live site instead."
           curl -fsSL "$LIVE_DATA" -o data/league.json
         env:

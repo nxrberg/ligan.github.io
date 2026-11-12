@@ -1,17 +1,21 @@
-// The Yahoo export sheet has one tab per team. The Pi uploads all tabs to `liveDataUrl` after each
-// export; the deploy also bakes a copy into `dataUrl` (scripts/fetch-data.mjs) as a fallback.
+// The Yahoo export sheet has one tab per team. After each export the Pi uploads the season it wrote
+// to the "data" branch as seasons/<season>.json; the site reads `liveDataUrl`, and the deploy bakes a
+// copy of it into `dataUrl` as a fallback.
+
+// The season the site shows. Rows carry a `season` column (e.g. "2012-13"); only rows from this one are
+// read. The deploy workflow reads this line to pick the season file, so keep it in this form.
+const season = "2026-27";
+
 export const config = {
   leagueName: "Ligan",
 
-  // The season the site shows. The export also uploads every earlier season (rows carry a `season`
-  // column, e.g. "2012-13"); only rows from this one are read.
-  season: "2026-27",
+  season,
 
-  // The Pi uploads the sheet's contents here after every export (branch "data" of the site repo);
+  // The Pi uploads the season's sheet data here after every export (branch "data" of the site repo);
   // the site reads it on each page load, so new data needs no deploy.
-  liveDataUrl: "https://raw.githubusercontent.com/nxrberg/ligan.github.io/data/league.json",
+  liveDataUrl: `https://raw.githubusercontent.com/nxrberg/ligan.github.io/data/seasons/${season}.json`,
 
-  // Copy baked into the last deploy, used when the live file can't be read.
+  // Copy baked into the last deploy (the same season file), used when the live file can't be read.
   dataUrl: "data/league.json",
 
   // Sheety endpoint for the Teams tab (Id, Team, Logo, Updated) that the export writes; gives each team's logo.

@@ -25,8 +25,35 @@ Categories, points per win/tie, and which categories count are set in `js/config
 - One bad export (2026-10-05 22:57) wrote every stat one column to the right. The site spots those fetches (the goalie totals' SHO holds a fraction) and shifts the values back, but the last column (SOG, SHO) is lost in them. Re-exporting the week replaces them.
 - SV% is recomputed from SV / SA.
 - Yahoo shows "-" for a category with no stats yet. The site reads that as 0, except SV%, where it means no value; a team with no SV% loses to every team that has one and ties the others without one.
-- After every export the Pi (`write_sheet.py`) uploads all tabs as `league.json` to the `data` branch of this repo, and the site reads that file (`liveDataUrl` in `js/config.js`) on each page load, so new data shows up within a few minutes without a deploy. If it can't be read, the site uses the copy from the last deploy.
-- The browser never reads the sheet itself. The deploy bakes the latest uploaded file into `data/league.json` as a fallback; without it the site shows `data/sample.json`. `scripts/fetch-data.mjs` can still build that file straight from the sheet for local use.
+- The sheet holds every season back to 2012-13 (a `season` column on the team tabs). The site shows one: `season` in `js/config.js` (now 2026-27), and drops rows from any other.
+
+## Where the data lives
+
+The data isn't on `main`. It lives on the **`data` branch** of this repo, one file per season:
+
+```
+data branch
+├── README.md
+├── league.json          old all-seasons file, no longer updated
+└── seasons/
+    ├── 2012-13.json
+    ├── …
+    └── 2026-27.json
+```
+
+Each file holds every tab of the export sheet, cut down to that season, as `{ "<tab title>": { "rows": [ {header: value, ...} ] } }`. Team tabs are cut down by their `season` column and Daily by its `date` (a season runs July–June). Teams (logos) is in every file.
+
+1. **The Pi writes it.** After every export, `write_sheet.py` (in the [YH-scraper-job](https://github.com/nxrberg/YH-scraper-job) repo, on the Pi) uploads only the season it just wrote, as `seasons/<season>.json`, through the GitHub contents API. Older seasons' files are left alone.
+2. **The site reads it live.** On each page load the site fetches `liveDataUrl` from `js/config.js`, which is `https://raw.githubusercontent.com/nxrberg/ligan.github.io/data/seasons/<season>.json`. New data shows up within a few minutes without a deploy.
+3. **The deploy keeps a fallback copy.** `.github/workflows/pages.yml` copies the current season's file from the `data` branch into `data/league.json` (`dataUrl`; ignored on `main`), and the site uses it when the live file can't be read. Without either, the site shows `data/sample.json`.
+
+The browser never reads the sheet itself. `scripts/fetch-data.mjs` can still build `data/league.json` straight from the sheet for local use. To look at the live data locally:
+
+```sh
+git fetch origin data && git show origin/data:seasons/2026-27.json | head -c 500
+```
+
+To start a new season, change `season` in `js/config.js` (the deploy reads that line to pick the fallback file). The Pi creates the new season's file on its first export.
 
 ## Run locally
 
